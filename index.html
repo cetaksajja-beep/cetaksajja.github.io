@@ -1,0 +1,1374 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Aplikasi Cascading Kinerja - Badan Keuangan Daerah</title>
+<style>
+:root{--bg:#f4f7fb;--card:#fff;--primary:#155e75;--primary2:#0e7490;--text:#172033;--muted:#64748b;--border:#dbe3ee;--danger:#b91c1c;--ok:#166534}
+*{box-sizing:border-box}body{margin:0;font-family:Segoe UI,Arial,sans-serif;background:var(--bg);color:var(--text)}
+header{background:linear-gradient(135deg,#083344,#155e75);color:white;padding:18px 24px;position:sticky;top:0;z-index:5}
+header h1{margin:0;font-size:21px}header p{margin:4px 0 0;opacity:.85;font-size:13px}
+.level-order-list{display:flex;flex-direction:column;gap:7px}
+.master-row{cursor:grab}
+.master-row:active{cursor:grabbing}
+.master-row.dragging{opacity:.45;background:#f8fafc}
+.master-row.drag-over td{border-top:2px solid var(--primary2)}
+.row-drag-handle{display:inline-flex;align-items:center;justify-content:center;width:24px;height:28px;margin-right:4px;color:var(--muted);font-size:17px;cursor:grab;user-select:none}
+.row-drag-handle:hover{color:var(--primary2)}
+
+.level-order-item{display:flex;align-items:center;gap:10px;padding:10px 12px;background:#f8fafc;border:1px solid var(--border);border-radius:9px;cursor:grab;user-select:none}
+.level-order-item:active{cursor:grabbing}
+.level-order-item.dragging{opacity:.45}
+.level-order-item.drag-over{border-color:var(--primary2);box-shadow:0 0 0 2px rgba(14,116,144,.12)}
+.level-order-handle{font-size:18px;color:var(--muted);width:24px;text-align:center}
+.level-order-no{font-weight:700;color:var(--muted);min-width:24px}
+.level-order-name{flex:1}
+.level-order-key{font-size:11px;color:var(--muted);font-family:Consolas,monospace}
+.master-row{cursor:grab}
+.master-row:active{cursor:grabbing}
+.master-row.dragging{opacity:.45;background:#f1f5f9}
+.master-row.drag-over td{border-top:3px solid var(--primary2)}
+.master-drag-handle{display:inline-block;margin-right:6px;color:var(--muted);font-size:15px;cursor:grab}
+.layout{display:flex;min-height:calc(100vh - 77px)}aside{width:235px;background:#0f172a;color:#cbd5e1;padding:12px;position:sticky;top:77px;height:calc(100vh - 77px)}
+nav button{width:100%;background:none;border:0;color:#cbd5e1;text-align:left;padding:11px 12px;border-radius:8px;cursor:pointer;margin:2px 0;font-size:14px}nav button:hover,nav button.active{background:#164e63;color:#fff}
+main{flex:1;padding:22px;max-width:1500px}.page{display:none}.page.active{display:block}
+h2{margin:0 0 5px;font-size:21px}.sub{color:var(--muted);font-size:13px;margin-bottom:18px}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;box-shadow:0 2px 8px #0f172a0a}.stat{font-size:28px;font-weight:700;color:var(--primary)}.label{font-size:12px;color:var(--muted)}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0}.btn{border:0;border-radius:8px;padding:9px 13px;cursor:pointer;font-weight:600}.primary{background:var(--primary);color:#fff}.secondary{background:#e2e8f0;color:#172033}.danger{background:#fee2e2;color:var(--danger)}
+table{width:100%;border-collapse:collapse;background:white;border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.assignment-table{min-width:1450px;border-left:1px solid #e2e8f0;border-right:1px solid #e2e8f0}
+.assignment-table th.activity-sub-col,.assignment-table td.activity-sub-col{width:15%;min-width:225px}
+.assignment-table th.activity-col,.assignment-table td.activity-col{width:21%;min-width:320px}
+.assignment-table th.indicator-col,.assignment-table td.indicator-col{width:19%;min-width:290px}
+.assignment-table thead th{position:sticky;top:0;z-index:3;background:#f1f5f9;box-shadow:0 1px 0 #cbd5e1}
+.assignment-counts{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-left:2px}
+.assignment-count{display:inline-flex;align-items:center;gap:5px;padding:8px 10px;border:1px solid var(--border);border-radius:8px;background:#f8fafc;color:#334155;font-size:12px;white-space:nowrap}
+.assignment-count b{color:var(--primary);font-size:14px}
+.employee-name{font-weight:700}.employee-position{display:block;margin-top:3px;color:var(--muted);font-size:11px;font-style:italic}
+.activity-cell{display:grid;grid-template-columns:max-content minmax(0,1fr);column-gap:10px;align-items:start}.activity-no{min-width:18px;text-align:center;font-weight:600}.activity-text{min-width:0;white-space:normal;overflow-wrap:anywhere}th,td{padding:9px 10px;border-bottom:1px solid var(--border);vertical-align:top;font-size:13px;text-align:left}th{background:#f1f5f9;color:#334155;text-align:center}tr:hover td{background:#f8fafc}
+input,select,textarea{width:100%;border:1px solid #cbd5e1;border-radius:7px;padding:9px;font:inherit;background:#fff}textarea{min-height:80px;resize:vertical}label{font-size:12px;color:#475569;font-weight:600;display:block;margin-bottom:5px}.formgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.full{grid-column:1/-1}.modal{position:fixed;inset:0;background:#02061788;display:none;align-items:center;justify-content:center;padding:20px;z-index:10}.modal.show{display:flex}.modalbox{background:white;border-radius:12px;width:min(760px,100%);max-height:90vh;overflow:auto;padding:20px}.modalhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:15px}.x{border:0;background:#e2e8f0;border-radius:50%;width:30px;height:30px;cursor:pointer}
+.badge{display:inline-block;padding:4px 7px;border-radius:99px;background:#e0f2fe;color:#075985;font-size:11px}.tree{font-size:13px}.tree ul{list-style:none;padding-left:22px;border-left:1px dashed #94a3b8}.tree li{margin:7px 0}.node{background:#fff;border:1px solid var(--border);border-radius:8px;padding:9px}.node strong{color:var(--primary)}
+.notice{padding:12px;background:#ecfeff;border-left:4px solid var(--primary2);border-radius:6px;margin-bottom:15px;font-size:13px}
+/* Perapihan isi tabel Dashboard Laporan: seluruh isi rata kiri, kecuali nomor urut */
+#reportBody table{table-layout:fixed}
+#reportBody table th,#reportBody table td{vertical-align:top;line-height:1.4;text-align:left}
+#reportBody table th:first-child,#reportBody table td:first-child{width:6%;text-align:center;vertical-align:top}
+#reportBody table th:nth-child(2),#reportBody table td:nth-child(2){width:11%}
+#reportBody table th:nth-child(3),#reportBody table td:nth-child(3){width:14%}
+#reportBody table th:nth-child(4),#reportBody table td:nth-child(4){width:31%}
+#reportBody table th:nth-child(5),#reportBody table td:nth-child(5){width:18%}
+#reportBody table th:nth-child(6),#reportBody table td:nth-child(6){width:10%}
+#reportBody table th:nth-child(7),#reportBody table td:nth-child(7){width:10%}
+#reportBody table td{overflow-wrap:anywhere;word-break:normal}
+#reportBody table td.rumusan-cell,#reportBody table td.rumusan-cell div,#reportBody table td.rumusan-cell b{padding-left:0!important;padding-right:0!important;margin-left:0!important;text-align:left!important;text-indent:0!important;display:block!important}
+#reportBody table .indicator-list{display:flex;flex-direction:column;gap:3px;text-align:left}
+#reportBody table .indicator-item{display:grid;grid-template-columns:40px minmax(0,1fr);column-gap:8px;align-items:start;text-align:left;width:100%}
+#reportBody table .indicator-no{display:flex;align-items:flex-start;justify-content:flex-start;width:40px;box-sizing:border-box;font-weight:600;text-align:left;white-space:nowrap;padding:3px 8px;margin:0;border-radius:6px;background:#eef3f9;line-height:1.25}
+#reportBody table .indicator-text{text-align:left!important;min-width:0;overflow-wrap:anywhere;margin:0;padding:3px 0;line-height:1.35}
+#masterBody td.indicator-cell{text-align:left}
+#masterBody .indicator-list{display:flex;flex-direction:column;gap:4px;text-align:left;width:100%}
+#masterBody .indicator-item{display:grid;grid-template-columns:40px minmax(0,1fr);column-gap:8px;align-items:start;text-align:left;width:100%}
+#masterBody .indicator-no{display:flex;align-items:flex-start;justify-content:flex-start;width:40px;box-sizing:border-box;font-weight:600;text-align:left;white-space:nowrap;padding:3px 8px;margin:0;border-radius:6px;background:#eef3f9;line-height:1.25}
+#masterBody .indicator-text{text-align:left!important;min-width:0;overflow-wrap:anywhere;margin:0;padding:3px 0;line-height:1.35}
+#reportBody table .indicator-list .indicator-text,#masterBody .indicator-list .indicator-text{grid-column:auto}
+#reportBody table td:first-child{font-weight:600}
+@media(max-width:900px){aside{width:190px}.grid{grid-template-columns:repeat(2,1fr)}}@media(max-width:650px){.activity-row{grid-template-columns:1fr!important}.activity-row>div:last-child{padding-top:0!important}.layout{display:block}aside{width:100%;height:auto;position:static}.grid,.formgrid{grid-template-columns:1fr}main{padding:12px}table{display:block;overflow:auto}}
+
+@page{size:A4 landscape;margin:10mm}
+@media print{
+  .print-hidden-row{display:none!important}
+
+  header,aside,.toolbar,.formgrid,.sub,#dashboard,#master,#pegawai,#tree,#laporan,#backup,.modal,.notice,.print-control{display:none!important}
+  body{background:#fff!important;margin:0!important}
+  .layout{display:block!important;min-height:0!important}
+  main{display:block!important;padding:0!important;max-width:none!important}
+  #penugasan{display:block!important}
+  #penugasan>h2{display:block!important;font-size:15pt!important;margin:0 0 5mm!important;color:#000!important}
+  #penugasan>.card:last-child{display:block!important;border:0!important;box-shadow:none!important;padding:0!important;overflow:visible!important}
+  .assignment-table{width:100%!important;min-width:0!important;table-layout:fixed!important;border:1px solid #d1d5db!important;border-left-color:#e2e8f0!important;border-right-color:#e2e8f0!important;font-size:8.5pt!important}
+  .assignment-table th,.assignment-table td{padding:5px 6px!important;font-size:8.5pt!important;border:1px solid #cbd5e1!important;color:#000!important}.assignment-table th{text-align:center!important}
+  .assignment-table th:nth-child(1),.assignment-table td:nth-child(1){width:3%!important}
+  .assignment-table th:nth-child(2),.assignment-table td:nth-child(2){width:8%!important}
+  .assignment-table th:nth-child(3),.assignment-table td:nth-child(3){width:11%!important}
+  .assignment-table th:nth-child(4),.assignment-table td:nth-child(4){width:11%!important}
+  .assignment-table th:nth-child(5),.assignment-table td:nth-child(5){width:13%!important}
+  .assignment-table th:nth-child(6),.assignment-table td:nth-child(6){width:13%!important}
+  .assignment-table th:nth-child(7),.assignment-table td:nth-child(7){width:10%!important}
+  .assignment-table th:nth-child(8),.assignment-table td:nth-child(8){width:14%!important}
+  .assignment-table th:nth-child(9),.assignment-table td:nth-child(9){width:16%!important}
+  .assignment-table .actions-col,.assignment-table td:last-child{display:none!important}
+  .employee-position{font-size:7.5pt!important;color:#333!important}
+  .activity-cell{grid-template-columns:max-content minmax(0,1fr)!important}
+  .activity-text,.indicator-col,.activity-sub-col{overflow-wrap:anywhere!important;word-break:break-word!important}
+  tr{page-break-inside:avoid}
+}
+
+.assignment-table tbody tr.activity-draggable{cursor:grab}.assignment-table tbody tr.activity-dragging{opacity:.45}.assignment-table td.drag-handle{width:30px;text-align:center;color:#64748b;font-size:15px;cursor:grab;user-select:none;white-space:nowrap}.assignment-table tr.drop-target td{border-top:2px solid #94a3b8}.activity-cell{display:grid;grid-template-columns:max-content minmax(0,1fr);column-gap:10px;align-items:start}.activity-no{min-width:18px;text-align:center;font-weight:600}.activity-text{min-width:0;white-space:normal;overflow-wrap:anywhere}
+
+/* Dashboard Penugasan Aktivitas: pita hierarki sebagai SVG INLINE.
+   BUKAN background-color CSS. SVG <rect> adalah objek grafis vector yang
+   dirender langsung oleh mesin layout dan dapat ikut ke Print Preview/cetak. */
+.assignment-table .assignment-spacer td{height:9px!important;padding:0!important;border:0!important}
+.assignment-table .hierarchy-band td{padding:0!important;border-top:1px solid #d7dee8!important;border-bottom:1px solid #d7dee8!important;font-weight:700!important;color:#334155!important}
+.assignment-table .hierarchy-svg{display:block;width:100%;height:30px;min-height:30px;margin:0;padding:0;border:0;overflow:visible}
+.assignment-table tbody tr.data-assignment td{background:#fff!important}
+.assignment-table tbody tr.data-assignment:hover td{background:#f8fafc!important}
+@media print{
+  .assignment-table .assignment-spacer td{height:5px!important}
+  /* Baris yang sengaja disembunyikan oleh filter cetak harus tetap tersembunyi.
+     Aturan ini ditempatkan setelah aturan hierarchy-band agar tidak kalah oleh !important. */
+  .assignment-table tr.print-hidden-row{display:none!important;visibility:hidden!important}
+  .assignment-table tr.hierarchy-band{display:table-row!important;visibility:visible!important;opacity:1!important;page-break-inside:avoid!important;break-inside:avoid!important}
+  .assignment-table tr.hierarchy-band.print-hidden-row{display:none!important;visibility:hidden!important;opacity:0!important}
+  .assignment-table tr.hierarchy-band td{display:table-cell!important;visibility:visible!important;padding:0!important;height:30px!important;line-height:0!important}
+  .assignment-table .hierarchy-svg{display:block!important;visibility:visible!important;opacity:1!important;width:100%!important;height:30px!important;min-height:30px!important}
+  .assignment-table .hierarchy-svg rect{display:block!important;visibility:visible!important;opacity:1!important}
+  .assignment-table{ -webkit-print-color-adjust:exact!important; print-color-adjust:exact!important; }
+}
+.emp-sub-tag{display:inline-block;margin:2px 3px 2px 0;padding:3px 7px;border:1px solid var(--border);border-radius:999px;background:#f8fafc;font-size:12px}
+.employee-subgroup{margin-top:10px;border:1px solid var(--border);border-radius:8px;background:#fff;overflow:hidden;text-align:left}
+/* Kelompok Pegawai berdasarkan Sub Kegiatan: seluruh isi rata kiri */
+#employeeSubGroupDashboard,
+#employeeSubGroupDashboard *{text-align:left!important}
+.employee-subgroup-title{padding:9px 12px;background:#fce7f3;font-weight:700;color:#334155;text-align:left!important}
+.employee-subgroup-list{padding:0;margin:0;list-style:none;text-align:left!important}
+.employee-subgroup-person{text-align:left}
+.employee-subgroup-person b,.employee-subgroup-person small{display:block;text-align:left}
+.employee-subgroup-list li{padding:8px 12px;border-top:1px solid #f1f5f9;display:flex;justify-content:space-between;gap:10px}
+.employee-subgroup-list small{color:#64748b}
+.sub-check-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:8px 16px;
+  max-height:280px;
+  overflow:auto;
+  padding:10px;
+  border:1px solid var(--border);
+  border-radius:8px;
+  background:#f8fafc;
+  align-items:start;
+}
+.sub-check{
+  display:grid;
+  grid-template-columns:20px minmax(0,1fr);
+  gap:7px;
+  align-items:start;
+  width:100%;
+  min-width:0;
+  padding:7px 8px;
+  border-radius:6px;
+  text-align:left;
+  box-sizing:border-box;
+}
+.sub-check input{margin:2px 0 0 0}
+.sub-check span{
+  display:block;
+  min-width:0;
+  text-align:left;
+  line-height:1.4;
+  overflow-wrap:anywhere;
+}
+.sub-check:hover{background:#fff}
+.muted{display:block;margin-top:2px;font-size:.88em;font-weight:400;}.activity-sub-checklist{display:flex;flex-direction:column;gap:6px;padding:8px 10px;border:1px solid var(--border);border-radius:8px;background:#f8fafc;max-height:220px;overflow:auto}.activity-sub-option{display:flex;align-items:flex-start;justify-content:flex-start;gap:8px;width:100%;padding:7px 8px;border:1px solid var(--border);border-radius:6px;background:#fff;cursor:pointer;text-align:left}.activity-sub-option:hover{background:#f1f5f9}.activity-sub-option input{width:16px!important;height:16px!important;min-width:16px!important;max-width:16px!important;min-height:16px!important;margin:2px 0 0 0!important;padding:0!important;flex:0 0 16px}.activity-sub-option span{display:block;flex:1;min-width:0;line-height:1.4;text-align:left;overflow-wrap:anywhere}
+.employee-subgroup-person{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;padding:8px 10px;border-bottom:1px solid #e5e7eb;background:#fff}
+.employee-subgroup-person:last-child{border-bottom:0}
+.employee-subgroup-person small{line-height:1.5;color:#475569}
+</style>
+<style id="code-text-block-style">
+.code-text-block{display:block;text-align:left;line-height:1.25}
+.code-text-block .code-line{display:block;text-align:left;font-weight:600}
+.code-text-block .desc-line{display:block;text-align:left;margin-top:2px}
+.code-text-block .ref-line{display:block;text-align:left;margin-top:2px}
+</style></head>
+<body>
+<header><h1>APLIKASI CASCADING KINERJA</h1><p>Badan Keuangan Daerah Provinsi Nusa Tenggara Timur • versi offline/local</p></header>
+<div class="layout">
+<aside><nav>
+<button class="active" onclick="showPage('dashboard',this)">🏠 Dashboard</button>
+<button onclick="showPage('master',this)">🗂 Master Cascading</button>
+<button onclick="showPage('pegawai',this)">👤 Pegawai</button>
+<button onclick="showPage('penugasan',this)">🧩 Penugasan Aktivitas</button>
+<button onclick="showPage('tree',this)">🌳 Pohon Cascading</button>
+<button onclick="showPage('laporan',this)">📄 Laporan</button>
+<button onclick="showPage('backup',this)">💾 Backup/Restore</button>
+</nav></aside>
+<main>
+<section id="dashboard" class="page active">
+<h2>Dashboard</h2><div class="sub">Ringkasan penjenjangan kinerja.</div>
+<div class="grid" id="stats"></div>
+<div class="notice"><b>Struktur yang digunakan:</b> Visi → Misi → Tujuan → Sasaran → IKU → Outcome → Program → Kegiatan → Sub Kegiatan → Output/Indikator → Pegawai.</div>
+<div class="card"><h3>Data awal contoh</h3><p style="font-size:13px">Aplikasi sudah berisi contoh struktur untuk <b>Meningkatnya Tata Kelola Keuangan Daerah</b> dengan indikator sasaran <b>Indeks Pengelolaan Keuangan Daerah (IPKD)</b>. Semua data dapat diedit atau dihapus.</p></div>
+</section>
+
+<section id="master" class="page">
+<h2>Master Cascading</h2><div class="sub">Tambah, ubah, hapus, dan hubungkan seluruh jenjang kinerja. Level 1 dan Level 2 mengikuti struktur RPJMD–Renstra PD.</div>
+<div class="toolbar"><button class="btn primary" onclick="openAdd()">＋ Tambah Data</button><input id="search" placeholder="Cari data..." oninput="renderMaster()" style="max-width:300px"><select id="levelFilter" onchange="renderMaster()" style="max-width:220px"><option value="">Semua level</option></select></div>
+<div class="card" style="margin-bottom:14px">
+  <div style="font-weight:700;margin-bottom:4px">Urutan Level</div>
+  <div class="sub" style="margin-bottom:10px">Seret level naik atau turun sesuai urutan cascading yang diinginkan. Urutan ini tersimpan otomatis di browser.</div>
+  <div id="levelOrderList" class="level-order-list"></div>
+</div>
+<div class="notice" style="margin-bottom:10px">Urutan tabel otomatis berdasarkan kode rekening dan struktur cascading: <b>Program → Kegiatan → Sub Kegiatan</b>. Kegiatan tampil di bawah Program, dan Sub Kegiatan tampil di bawah Kegiatan.</div>
+<div class="card" style="padding:0;overflow:auto"><table><thead><tr><th>No</th><th>Level</th><th>Nama</th><th>Indikator</th><th>Parent</th><th>Output</th><th>Target</th><th>Penanggung Jawab</th><th>Aksi</th></tr></thead><tbody id="masterBody"></tbody></table></div>
+</section>
+
+<section id="pegawai" class="page">
+<h2>Master Pegawai</h2><div class="sub">Kelola pegawai yang dapat dikaitkan dengan aktivitas paralel. Urutan pegawai: Kasubag/Kasubid → Staf bergolongan PNS → Staf dengan tingkat Romawi IX–I → kosong; Kasubag/Kasubid dan Staf bergolongan diurutkan menurut hierarki Golongan lalu Pangkat, sedangkan IX–I dibaca sebagai angka 9–1.</div>
+<div class="toolbar"><button class="btn primary" onclick="openEmployee()">＋ Tambah Pegawai</button></div>
+<div class="card" style="padding:0;overflow:auto"><table><thead><tr><th>No</th><th>Unit</th><th>Nama Pegawai</th><th>Pangkat</th><th>Golongan</th><th>Jabatan</th><th>Sub Kegiatan</th><th>Aksi</th></tr></thead><tbody id="empBody"></tbody></table></div><div class="card" style="margin-top:12px"><h3 style="margin-top:0">Kelompok Pegawai berdasarkan Sub Kegiatan</h3><div id="employeeSubGroupDashboard"></div></div>
+</section>
+
+<section id="penugasan" class="page">
+<h2>Dashboard Penugasan Aktivitas</h2><div class="sub">Satu sub kegiatan dapat memiliki banyak aktivitas paralel, masing-masing dengan indikator dan pegawai tersendiri.</div>
+<div class="card">
+<div class="formgrid">
+<div><label>Unit</label><select id="aunit" onchange="assignmentFilterEmployees()"></select></div>
+<div><label>Program</label><select id="aprogram" onchange="assignmentFilterKegiatan()"></select></div>
+<div><label>Kegiatan + Kode</label><select id="akegiatan" onchange="assignmentFilterSub()"></select></div>
+<div class="full"><label>Sub Kegiatan + Kode</label><select id="asub" onchange="assignmentFilterMasterActivity();assignmentFilterEmployees()"></select></div>
+<div class="full">
+  <label>Aktivitas Sub Kegiatan <span class="muted">(dapat memilih lebih dari satu)</span></label>
+  <div id="aaktivitasSub" class="activity-sub-checklist"></div>
+  <div id="activitySubHint" class="sub" style="margin-top:5px">Pilih satu atau lebih Aktivitas Sub Kegiatan.</div>
+</div>
+<div class="full"><label>Pegawai + Jabatan</label><select id="apegawai"></select><div id="employeeGroupHint" class="sub" style="margin-top:5px">Pilih Sub Kegiatan terlebih dahulu untuk menampilkan pegawai sesuai kelompok.</div></div>
+<div class="full">
+  <div class="notice" style="margin-bottom:8px">Urutan otomatis mengikuti <b>Program → Kegiatan → Sub Kegiatan → Aktivitas Sub Kegiatan → Pegawai → Urutan Aktivitas</b>. Nomor aktivitas untuk setiap pegawai dihitung per <b>Sub Kegiatan</b>: ketika pegawai yang sama melaksanakan Sub Kegiatan berbeda, nomor otomatis kembali ke <b>1</b>. Jika Uraian Aktivitas ditambahkan belakangan, sistem memasukkannya ke kelompok yang dipilih dan melanjutkan urutan terakhir kelompok tersebut.</div>
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px">
+    <label style="margin:0">Daftar Aktivitas dan Indikator Aktivitas</label>
+    <button type="button" class="btn secondary" onclick="addActivityRow()">＋ Tambah Aktivitas</button>
+  </div>
+  <div id="activityRows"></div>
+</div>
+</div>
+<div class="toolbar" style="align-items:center"><button class="btn primary" onclick="saveAssignment()">Simpan Penugasan</button><button class="btn secondary" onclick="clearAssignmentForm()">Bersihkan</button><div id="assignmentCounts" class="assignment-counts" aria-live="polite"></div></div>
+<div class="card print-control" style="margin-top:10px;background:#f8fafc">
+  <div style="display:flex;gap:8px;align-items:end;flex-wrap:wrap">
+    <div style="min-width:280px;flex:1"><label>Pilihan Cetak Penugasan Aktivitas</label><select id="printEmployee"><option value="">-- Pilih Nama Pegawai --</option></select></div>
+    <button class="btn secondary" type="button" onclick="printAssignment('all')">🖨 Cetak Seluruh</button>
+    <button class="btn secondary" type="button" onclick="printAssignment('employee')">🖨 Cetak Berdasarkan Pegawai</button>
+  </div>
+  <div class="sub" style="margin-top:6px">Cetak berdasarkan pegawai hanya menampilkan seluruh penugasan milik pegawai yang dipilih, dengan hierarki Sub Kegiatan tetap mengikuti urutan kode.</div>
+</div>
+</div>
+<div class="card" style="padding:0;overflow:auto"><table class="assignment-table"><thead><tr><th>No</th><th>Unit</th><th>Program</th><th>Kegiatan</th><th>Sub Kegiatan</th><th class="activity-sub-col">Aktivitas Sub Kegiatan</th><th>Pegawai</th><th class="activity-col">Uraian Aktivitas</th><th class="indicator-col">Indikator Aktivitas</th><th class="actions-col">Aksi</th></tr></thead><tbody id="assignmentBody"></tbody></table></div>
+</section>
+
+<section id="tree" class="page">
+<h2>Pohon Cascading</h2><div class="sub">Tampilan hubungan parent → child berdasarkan data yang tersimpan.</div>
+<div class="toolbar"><button class="btn secondary" onclick="window.print()">🖨 Cetak</button></div>
+<div class="card"><div id="treeBody" class="tree"></div></div>
+</section>
+
+<section id="laporan" class="page">
+<h2>Laporan</h2><div class="sub">Cetak ringkasan cascading atau simpan sebagai PDF melalui dialog cetak browser.</div>
+<div class="toolbar"><button class="btn primary" onclick="printReport()">🖨 Cetak Laporan Cascading</button></div>
+<div class="card"><div id="reportBody"></div></div>
+</section>
+
+<section id="backup" class="page">
+<h2>Backup & Restore</h2><div class="sub">Data disimpan otomatis di browser. Gunakan backup agar data aman saat pindah komputer/browser.</div>
+<div class="toolbar"><button class="btn primary" onclick="downloadBackup()">⬇ Backup JSON</button><label class="btn secondary" style="display:inline-block">⬆ Restore JSON<input type="file" accept=".json" onchange="restoreBackup(event)" style="display:none"></label><button class="btn danger" onclick="resetData()">Reset Data Contoh</button></div>
+<div class="notice">Backup berisi seluruh data cascading dan pegawai. Tidak dikirim ke internet.</div>
+</section>
+</main></div>
+
+<div class="modal" id="modal"><div class="modalbox"><div class="modalhead"><h3 id="modalTitle" style="margin:0">Tambah Data</h3><button class="x" onclick="closeModal()">×</button></div><div id="modalContent"></div></div></div>
+
+<script>
+const defaultLevels=[
+["visi","Tujuan Jangka Menengah (RPJMD)"],["misi","Tujuan Renstra PD"],["tujuan","Tujuan"],["sasaran","Sasaran"],["iku","IKU"],["outcome","Outcome"],["program","Program"],["kegiatan","Kegiatan"],["subkegiatan","Sub Kegiatan"],["output","Output"],["indikator","Indikator"]
+];
+const key="cascading_bakeuda_ntt_v1";
+const savedLevelOrder=JSON.parse(localStorage.getItem(key+"_level_order")||"null");
+let levels=(()=>{
+  const byKey=new Map(defaultLevels);
+  const ordered=Array.isArray(savedLevelOrder)?savedLevelOrder.filter(k=>byKey.has(k)).map(k=>[k,byKey.get(k)]):[];
+  defaultLevels.forEach(x=>{if(!ordered.some(y=>y[0]===x[0]))ordered.push(x)});
+  return ordered;
+})();
+function saveLevelOrder(){localStorage.setItem(key+"_level_order",JSON.stringify(levels.map(x=>x[0])))}
+let savedItemOrder=JSON.parse(localStorage.getItem(key+"_item_order")||"null");
+function normalizeItemOrder(){
+  const ids=data.items.map(x=>x.id);
+  if(!Array.isArray(savedItemOrder)) savedItemOrder=ids.slice();
+  savedItemOrder=savedItemOrder.filter(id=>ids.includes(id));
+  ids.forEach(id=>{if(!savedItemOrder.includes(id))savedItemOrder.push(id)});
+}
+function saveItemOrder(){localStorage.setItem(key+"_item_order",JSON.stringify(savedItemOrder))}
+function itemOrderIndex(id){const i=savedItemOrder.indexOf(id);return i<0?999999:i}
+const initial={
+items:[
+{id:1,level:"visi",name:"Terwujudnya NTT yang Bangkit, Maju dan Sejahtera",indicator:"",target:"",parent:null},
+{id:2,level:"misi",name:"Meningkatkan tata kelola pemerintahan yang baik dan bersih",indicator:"",target:"",parent:1},
+{id:3,level:"tujuan",name:"Meningkatnya kualitas tata kelola pemerintahan daerah",indicator:"",target:"",parent:2},
+{id:4,level:"sasaran",name:"Meningkatnya Tata Kelola Keuangan Daerah",indicator:"Indeks Pengelolaan Keuangan Daerah",target:"2026: 68,279",parent:3},
+{id:5,level:"iku",name:"Indeks Pengelolaan Keuangan Daerah (IPKD)",indicator:"Nilai IPKD",target:"68,279",parent:4},
+{id:6,level:"outcome",name:"Meningkatnya kualitas pengelolaan keuangan daerah",indicator:"Indeks/indikator pengelolaan keuangan daerah",target:"Sesuai target RPJMD",parent:4},
+{id:7,level:"program",name:"Program Pengelolaan Keuangan Daerah",indicator:"Persentase ketercapaian pengelolaan keuangan daerah",target:"100%",parent:6},
+{id:8,level:"kegiatan",name:"Koordinasi dan Penyusunan Rencana Anggaran Daerah",indicator:"% dokumen anggaran tepat waktu/sesuai peraturan",target:"100%",parent:7},
+{id:9,level:"subkegiatan",name:"Penyusunan KUA 2027",indicator:"Dokumen KUA 2027 tersusun",target:"1 dokumen",parent:8},
+{id:10,level:"subkegiatan",name:"Penyusunan PPAS 2027",indicator:"Dokumen PPAS 2027 tersusun",target:"1 dokumen",parent:8},
+{id:11,level:"kegiatan",name:"Koordinasi dan Pengelolaan Perbendaharaan Daerah",indicator:"% pelayanan dokumen penatausahaan keuangan tepat waktu/sesuai",target:"100%",parent:7},
+{id:12,level:"kegiatan",name:"Koordinasi dan Pelaksanaan Akuntansi dan Pelaporan Keuangan Daerah",indicator:"% laporan keuangan tepat waktu",target:"100%",parent:7}
+],
+employees:[
+{name:"Pegawai Contoh 1",jabatan:"Perencana",unit:"Badan Keuangan Daerah",activity:"Menyusun bahan KUA 2027",item:9},
+{name:"Pegawai Contoh 2",jabatan:"Perencana",unit:"Badan Keuangan Daerah",activity:"Menyusun bahan PPAS 2027",item:10}
+],assignments:[]};
+let data=JSON.parse(localStorage.getItem(key)||"null")||initial; data.assignments=data.assignments||[]; data.employeeSubGroups=Array.isArray(data.employeeSubGroups)?data.employeeSubGroups:[]; normalizeEmployeeSubGroups();
+normalizeItemOrder();
+function save(){
+  normalizeEmployeeSubGroups();
+  data.assignments.forEach((a,i)=>{if(!Number.isFinite(Number(a.order))||Number(a.order)<1)a.order=i+1});
+  localStorage.setItem(key,JSON.stringify(data));renderAll()
+}
+function esc(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]))}
+function employeeSort(a,b){
+  // Urutan pegawai v6.9:
+  // 1) KASUBAG/KASUBID paling atas.
+  // 2) Setelah itu staf/pegawai dengan hierarki golongan/pangkat PNS
+  //    (IV/e ... I/a), dari yang tertinggi ke terendah.
+  // 3) Setelah seluruh golongan/pangkat PNS selesai, baru nilai Romawi
+  //    IX ... I, yang dibaca sebagai angka 9 ... 1.
+  // 4) Nilai kosong/dash paling bawah.
+  //
+  // Kode hierarki dapat tersimpan pada kolom Pangkat maupun Golongan.
+  // Karena itu v6.9 membaca keduanya, sehingga data seperti
+  // "III/d - IX" tetap terbaca sebagai hierarki III/d lalu tingkat IX,
+  // bukan menjadikan IX sebagai pengurutan utama.
+  const norm=s=>String(s??'').trim().toLowerCase().replace(/\s+/g,' ');
+  const clean=s=>String(s??'').trim().replace(/\s+/g,'');
+  const isKasub=x=>/\bkasubag\b|\bkasubid\b/.test(norm(x?.jabatan));
+  const isEmpty=x=>['','-','—','–'].includes(norm(x));
+
+  const golonganOrder={
+    'IV/e':18,'IV/d':17,'IV/c':16,'IV/b':15,'IV/a':14,
+    'III/d':13,'III/c':12,'III/b':11,'III/a':10,
+    'II/d':9,'II/c':8,'II/b':7,'II/a':6,
+    'I/d':5,'I/c':4,'I/b':3,'I/a':2
+  };
+  const romanOrder={IX:9,VIII:8,VII:7,VI:6,V:5,IV:4,III:3,II:2,I:1};
+
+  // Ambil kode golongan dari salah satu atau gabungan field.
+  const sourceText=x=>`${clean(x?.golongan)} ${clean(x?.pangkat)}`.toUpperCase();
+  const standardRank=x=>{
+    const t=sourceText(x);
+    let best=null;
+    Object.entries(golonganOrder).forEach(([k,v])=>{
+      if(t.includes(k.toUpperCase()) && (best===null || v>best))best=v;
+    });
+    return best;
+  };
+  const romanRank=x=>{
+    // Hanya baca Romawi jika tidak ada kode golongan standar yang lebih utama.
+    // Gunakan token utuh agar III/d tidak dianggap sebagai III.
+    const fields=[String(x?.golongan??''),String(x?.pangkat??'')];
+    let best=null;
+    fields.forEach(f=>{
+      const tokens=f.toUpperCase().split(/[^IVX]+/).filter(Boolean);
+      tokens.forEach(tok=>{
+        if(romanOrder[tok]!=null && (best===null || romanOrder[tok]>best))best=romanOrder[tok];
+      });
+    });
+    return best;
+  };
+  const standardPangkatRank=x=>{
+    const p=norm(x?.pangkat);
+    if(isEmpty(p))return null;
+    const exact={
+      'pembina utama':18,'pembina utama madya':17,'pembina utama muda':16,
+      'pembina tingkat i':15,'pembina':14,
+      'penata tingkat i':13,'penata tk. i':13,'penata tk i':13,'penata':12,
+      'penata muda tingkat i':11,'penata muda tk. i':11,'penata muda tk i':11,'penata muda':10,
+      'pengatur tingkat i':9,'pengatur tk. i':9,'pengatur tk i':9,'pengatur':8,
+      'pengatur muda tingkat i':7,'pengatur muda tk. i':7,'pengatur muda tk i':7,'pengatur muda':6,
+      'juru tingkat i':5,'juru tk. i':5,'juru tk i':5,'juru':4
+    };
+    if(exact[p]!=null)return exact[p];
+    const code=Object.keys(golonganOrder).find(k=>p===k.toLowerCase());
+    return code?golonganOrder[code]:null;
+  };
+  const jabatan=x=>String(x?.jabatan??'').trim();
+  const nama=x=>String(x?.name??'').trim();
+
+  const group=x=>{
+    if(isKasub(x))return 0;
+    if(standardRank(x)!==null)return 1;
+    if(romanRank(x)!==null)return 2;
+    return 3;
+  };
+
+  let c=group(a)-group(b); if(c)return c;
+
+  if(group(a)===0 || group(a)===1){
+    const ga=standardRank(a)??-1, gb=standardRank(b)??-1;
+    c=gb-ga; if(c)return c;
+    const pa=standardPangkatRank(a)??-1, pb=standardPangkatRank(b)??-1;
+    c=pb-pa; if(c)return c;
+    c=norm(a?.pangkat).localeCompare(norm(b?.pangkat),undefined,{sensitivity:'base',numeric:true});
+    if(c)return c;
+  }
+
+  if(group(a)===2){
+    const ra=romanRank(a)??-1, rb=romanRank(b)??-1;
+    c=rb-ra; if(c)return c;
+  }
+
+  c=jabatan(a).localeCompare(jabatan(b),undefined,{sensitivity:'base',numeric:true});
+  if(c)return c;
+  return nama(a).localeCompare(nama(b),undefined,{sensitivity:'base',numeric:true});
+}
+function levelName(l){return levels.find(x=>x[0]===l)?.[1]||l}
+function parentName(id){let n=Number(id);let x=data.items.find(i=>Number(i.id)===n);return x?x.name:"—"}
+function showPage(id,btn){document.querySelectorAll(".page").forEach(x=>x.classList.remove("active"));document.getElementById(id).classList.add("active");document.querySelectorAll("nav button").forEach(x=>x.classList.remove("active"));btn?.classList.add("active");renderAll()}
+function renderStats(){document.getElementById("stats").innerHTML=levels.slice(0,10).map(([k,n])=>`<div class="card"><div class="stat">${data.items.filter(x=>x.level===k).length}</div><div class="label">${n}</div></div>`).join("")}
+function renderLevelOrder(){
+  const el=document.getElementById("levelOrderList");
+  if(!el)return;
+  el.innerHTML=levels.map(([k,n],i)=>`<div class="level-order-item" draggable="true" data-level="${k}">
+    <span class="level-order-handle" title="Seret untuk mengubah urutan">☷</span>
+    <span class="level-order-no">${i+1}.</span>
+    <span class="level-order-name"><b>${esc(n)}</b></span>
+    <span class="level-order-key">${esc(k)}</span>
+  </div>`).join("");
+  let dragged=null;
+  el.querySelectorAll(".level-order-item").forEach(item=>{
+    item.addEventListener("dragstart",e=>{
+      dragged=item; item.classList.add("dragging");
+      e.dataTransfer.effectAllowed="move";
+      e.dataTransfer.setData("text/plain",item.dataset.level);
+    });
+    item.addEventListener("dragend",()=>{
+      item.classList.remove("dragging");
+      el.querySelectorAll(".level-order-item").forEach(x=>x.classList.remove("drag-over"));
+      dragged=null;
+    });
+    item.addEventListener("dragover",e=>{
+      e.preventDefault();
+      if(!dragged||dragged===item)return;
+      e.dataTransfer.dropEffect="move";
+      item.classList.add("drag-over");
+    });
+    item.addEventListener("dragleave",()=>item.classList.remove("drag-over"));
+    item.addEventListener("drop",e=>{
+      e.preventDefault();
+      if(!dragged||dragged===item)return;
+      const from=levels.findIndex(x=>x[0]===dragged.dataset.level);
+      const to=levels.findIndex(x=>x[0]===item.dataset.level);
+      if(from<0||to<0)return;
+      const moved=levels.splice(from,1)[0];
+      levels.splice(to,0,moved);
+      saveLevelOrder();
+      renderAll();
+    });
+  });
+}
+function bindMasterRowDrag(){
+  const body=document.getElementById("masterBody");
+  let dragged=null;
+  body.querySelectorAll("tr.master-row").forEach(row=>{
+    row.draggable=true;
+    row.addEventListener("dragstart",e=>{
+      dragged=row;
+      row.classList.add("dragging");
+      e.dataTransfer.effectAllowed="move";
+      e.dataTransfer.setData("text/plain",row.dataset.id);
+    });
+    row.addEventListener("dragend",()=>{
+      row.classList.remove("dragging");
+      body.querySelectorAll("tr.master-row").forEach(x=>x.classList.remove("drag-over"));
+      dragged=null;
+    });
+    row.addEventListener("dragover",e=>{
+      e.preventDefault();
+      if(!dragged||dragged===row)return;
+      const draggedItem=data.items.find(x=>x.id===Number(dragged.dataset.id));
+      const targetItem=data.items.find(x=>x.id===Number(row.dataset.id));
+      if(!draggedItem||!targetItem)return;
+      row.classList.add("drag-over");
+      e.dataTransfer.dropEffect="move";
+    });
+    row.addEventListener("dragleave",()=>row.classList.remove("drag-over"));
+    row.addEventListener("drop",e=>{
+      e.preventDefault();
+      if(!dragged||dragged===row)return;
+      const fromId=Number(dragged.dataset.id), toId=Number(row.dataset.id);
+      const from=savedItemOrder.indexOf(fromId), to=savedItemOrder.indexOf(toId);
+      if(from<0||to<0)return;
+      const moved=savedItemOrder.splice(from,1)[0];
+      savedItemOrder.splice(to,0,moved);
+      saveItemOrder();
+      renderMaster();
+    });
+  });
+}
+function buildReferenceMap(){
+  const refs=new Map();
+  const levelNo=new Map(levels.map(([k],i)=>[k,i+1]));
+  const counters=new Map();
+  const codeParts=item=>String(item?.code||'').match(/\d+/g)?.map(Number)||[];
+  const compareCode=(a,b)=>{
+    const pa=codeParts(a),pb=codeParts(b),n=Math.max(pa.length,pb.length);
+    for(let i=0;i<n;i++){const da=pa[i]??-1,db=pb[i]??-1;if(da!==db)return da-db;}
+    return String(a?.code||'').localeCompare(String(b?.code||''),undefined,{numeric:true,sensitivity:'base'})||String(a?.name||'').localeCompare(String(b?.name||''),undefined,{numeric:true,sensitivity:'base'});
+  };
+  const levelRank={program:1,kegiatan:2,subkegiatan:3};
+  const byParent=new Map();
+  data.items.forEach(x=>{const k=x.parent==null?'__ROOT__':String(x.parent);if(!byParent.has(k))byParent.set(k,[]);byParent.get(k).push(x)});
+  const visit=(parent)=>{
+    const children=(byParent.get(parent==null?'__ROOT__':String(parent))||[]).slice().sort((a,b)=>(levelRank[a.level]||9)-(levelRank[b.level]||9)||compareCode(a,b));
+    children.forEach(x=>{
+      if(levelNo.has(x.level)){
+        const n=(counters.get(x.level)||0)+1;counters.set(x.level,n);refs.set(x.id,`${levelNo.get(x.level)}.${n}`);
+      }
+      visit(x.id);
+    });
+  };
+  visit(null);
+  data.items.filter(x=>!refs.has(x.id)&&levelNo.has(x.level)).sort((a,b)=>(levelRank[a.level]||9)-(levelRank[b.level]||9)||compareCode(a,b)).forEach(x=>{const n=(counters.get(x.level)||0)+1;counters.set(x.level,n);refs.set(x.id,`${levelNo.get(x.level)}.${n}`)});
+  return refs;
+}
+function itemDisplay(x,refs,withRef=false){if(!x)return '—';const code=x.code?esc(x.code):'';const ref=withRef&&refs?.get(x.id)?` <span class="muted">[Ref ${esc(refs.get(x.id))}]</span>`:'';return `<div class="code-text-block">${code?`<div class="code-line">${code}</div>`:''}<div class="desc-line">${esc(x.name)}${ref?`<div class="ref-line">${ref}</div>`:''}</div></div>`}
+function renderMaster(){
+  renderLevelOrder();
+  let sf=document.getElementById("levelFilter");
+  if(sf){
+    const current=sf.value;
+    sf.innerHTML='<option value="">Semua level</option>'+levels.map(([k,n])=>`<option value="${k}">${esc(n)}</option>`).join("");
+    sf.value=current;
+  }
+  normalizeItemOrder();
+  let q=(document.getElementById("search")?.value||"").toLowerCase(), f=sf?.value||"";
+  let arr=data.items.filter(x=>(!f||x.level===f)&&(`${x.name} ${x.indicator} ${parentName(x.parent)} ${x.penanggungjawab||""}`).toLowerCase().includes(q));
+  // Urutan otomatis mengikuti struktur kode rekening dan hierarki cascading:
+  // Program -> Kegiatan -> Sub Kegiatan. Anak selalu tampil tepat di bawah parent-nya.
+  // Segmen kode dibandingkan secara numerik agar 5.02.01.10 berada setelah 5.02.01.2.
+  const levelPriority={program:1,kegiatan:2,subkegiatan:3};
+  const codeParts=item=>String(item?.code||"").match(/\d+/g)?.map(Number)||[];
+  const compareCode=(a,b)=>{
+    const pa=codeParts(a), pb=codeParts(b);
+    const n=Math.max(pa.length,pb.length);
+    for(let i=0;i<n;i++){
+      const da=pa[i]??-1, db=pb[i]??-1;
+      if(da!==db)return da-db;
+    }
+    return String(a?.code||"").localeCompare(String(b?.code||""),undefined,{numeric:true,sensitivity:'base'});
+  };
+  const compareNode=(a,b)=>{
+    const lp=(levelPriority[a.level]||0)-(levelPriority[b.level]||0);
+    if(lp!==0)return lp;
+    const cc=compareCode(a,b);
+    if(cc!==0)return cc;
+    return String(a.name||"").localeCompare(String(b.name||""),undefined,{numeric:true,sensitivity:'base'});
+  };
+  const sorted=[];
+  const visited=new Set();
+  function addBranch(parentId){
+    const children=data.items.filter(x=>(x.parent??null)===(parentId??null)).sort(compareNode);
+    children.forEach(x=>{
+      if(visited.has(x.id))return;
+      visited.add(x.id); sorted.push(x); addBranch(x.id);
+    });
+  }
+  // Akar non-anak diurutkan berdasarkan level lalu kode, kemudian seluruh anak
+  // ditempatkan di bawah parent masing-masing.
+  addBranch(null);
+  data.items.filter(x=>!visited.has(x.id)).sort(compareNode).forEach(x=>{visited.add(x.id);sorted.push(x);addBranch(x.id)});
+  arr=sorted.filter(x=>arr.some(y=>y.id===x.id));
+  const refs=buildReferenceMap();
+  document.getElementById("masterBody").innerHTML=arr.map((x,i)=>`<tr class="master-row" data-id="${x.id}" title="Seret baris naik/turun untuk mengubah urutan">
+    <td>${refs.get(x.id)||''}</td>
+    <td><span class="badge">${levelName(x.level)}</span></td>
+    <td><span class="row-drag-handle" title="Seret naik/turun untuk mengubah urutan">☷</span><b>${itemDisplay(x,refs,false)}</b></td>
+    <td class="indicator-cell">${renderIndicatorList(getMasterIndicators(x))}</td>
+    <td>${esc(parentName(x.parent))}</td>
+    <td>${esc(x.output||"—")}</td>
+    <td>${esc(x.target)}</td>
+    <td>${renderPenanggungjawabList(x)}</td>
+    <td><button class="btn secondary" onclick="event.stopPropagation();editItem(${x.id})">Edit</button> <button class="btn danger" onclick="event.stopPropagation();delItem(${x.id})">Hapus</button></td>
+  </tr>`).join("")||`<tr><td colspan="9">Belum ada data.</td></tr>`;
+  bindMasterRowDrag();
+}
+function openAdd(){openItemForm()}
+function editItem(id){openItemForm(data.items.find(x=>x.id===id))}
+function getMasterIndicators(x){
+  if(Array.isArray(x?.indicators)) return x.indicators.map(v=>String(v??'').trim()).filter(Boolean);
+  return String(x?.indicator||'').split(/\s*\|\s*|\r?\n/).map(v=>v.trim()).filter(Boolean);
+}
+function renderIndicatorList(items){
+  const arr=Array.isArray(items)?items.filter(Boolean):[];
+  if(!arr.length) return '—';
+  // Jika hanya ada satu indikator, tampilkan teks saja tanpa nomor.
+  if(arr.length===1) return `<div class="indicator-list"><div class="indicator-text">${esc(arr[0])}</div></div>`;
+  // Jika indikator lebih dari satu, nomor dipisahkan dari teks dan setiap teks rata kiri.
+  return `<div class="indicator-list">${arr.map((v,i)=>`<div class="indicator-item"><span class="indicator-no">${i+1}.</span><span class="indicator-text">${esc(v)}</span></div>`).join('')}</div>`;
+}
+function renderMasterIndicatorInputs(values){
+  const wrap=document.getElementById('indicatorRows'); if(!wrap)return;
+  const arr=Array.isArray(values)&&values.length?values:[''];
+  wrap.innerHTML=arr.map((v,i)=>`<div class="master-indicator-row" style="display:flex;gap:8px;align-items:flex-start;margin-bottom:8px"><input class="master-indicator-input" value="${esc(v)}" placeholder="Indikator ${i+1}"><button type="button" class="btn danger" title="Hapus indikator" onclick="removeMasterIndicator(this)">Hapus</button></div>`).join('');
+}
+function addMasterIndicator(){
+  const wrap=document.getElementById('indicatorRows'); if(!wrap)return;
+  const n=wrap.querySelectorAll('.master-indicator-input').length+1;
+  const row=document.createElement('div'); row.className='master-indicator-row'; row.style.cssText='display:flex;gap:8px;align-items:flex-start;margin-bottom:8px';
+  row.innerHTML=`<input class="master-indicator-input" placeholder="Indikator ${n}"><button type="button" class="btn danger" title="Hapus indikator" onclick="removeMasterIndicator(this)">Hapus</button>`;
+  wrap.appendChild(row); row.querySelector('input')?.focus();
+}
+function removeMasterIndicator(btn){
+  const wrap=document.getElementById('indicatorRows'); if(!wrap)return;
+  const row=btn.closest('.master-indicator-row'); if(row)row.remove();
+  if(!wrap.querySelector('.master-indicator-input')) addMasterIndicator();
+  [...wrap.querySelectorAll('.master-indicator-input')].forEach((el,i)=>el.placeholder=`Indikator ${i+1}`);
+}
+function readMasterIndicators(){
+  return [...document.querySelectorAll('.master-indicator-input')].map(el=>el.value.trim()).filter(Boolean);
+}
+function getEligiblePenanggungjawab(){
+  // Hanya pegawai dengan jabatan Kasubag/Kasubid yang ditawarkan.
+  const emps=data.employees.map((e,i)=>({e,i})).filter(({e})=>{
+    const j=String(e.jabatan||'').toLowerCase().replace(/\s+/g,' ');
+    return /\bkasubag\b|\bkasubid\b/.test(j);
+  }).sort((a,b)=>employeeSort(a.e,b.e));
+  return [
+    ...emps.map(({e,i})=>({type:'pegawai',index:i,name:e.name,jabatan:e.jabatan||''})),
+    {type:'tim',index:null,name:'Tim Kerja',jabatan:'Tim Kerja'}
+  ];
+}
+function normalizePenanggungjawabs(x){
+  if(Array.isArray(x?.penanggungjawabs) && x.penanggungjawabs.length){
+    return x.penanggungjawabs.map(v=>({
+      type:v?.type==='tim'?'tim':'pegawai',
+      index:Number.isInteger(Number(v?.index))?Number(v.index):null,
+      name:String(v?.name||'').trim(),
+      jabatan:String(v?.jabatan||'').trim()
+    })).filter(v=>v.name);
+  }
+  const legacy=String(x?.penanggungjawab||'').trim();
+  if(!legacy)return [];
+  // Data lama dipertahankan sebagai pilihan sementara agar tidak hilang saat diedit.
+  return legacy.split(/\s*;\s*|\s*\|\s*/).map(name=>({type:'legacy',index:null,name:name.trim(),jabatan:''})).filter(v=>v.name);
+}
+function penanggungjawabOptions(selected){
+  const eligible=getEligiblePenanggungjawab();
+  const all=[...eligible];
+  // Pertahankan nama lama yang sudah tersimpan tetapi tidak lagi memenuhi filter.
+  if(selected?.type==='legacy' && selected.name && !all.some(v=>v.name===selected.name)){
+    all.unshift(selected);
+  }
+  return all.map(v=>`<option value="${esc(v.type+'|'+(v.index??'')+'|'+v.name)}" ${selected&&selected.name===v.name?'selected':''}>${esc(v.name)}</option>`).join('');
+}
+function penanggungjawabJabatanOptions(selected){
+  const eligible=getEligiblePenanggungjawab();
+  let matches=eligible.filter(v=>v.name===selected?.name);
+  if(selected?.type==='legacy' && selected?.name && !matches.length)matches=[{type:'legacy',name:selected.name,jabatan:selected.jabatan||'—'}];
+  return matches.map(v=>`<option value="${esc(v.jabatan||'')}" selected>${esc(v.jabatan||'—')}</option>`).join('');
+}
+function syncPenanggungjawabRow(row){
+  const ns=row?.querySelector('.pj-name'); const js=row?.querySelector('.pj-jabatan'); if(!ns||!js)return;
+  const [type,index,name]=String(ns.value||'').split('|');
+  const eligible=getEligiblePenanggungjawab().find(v=>v.name===name && v.type===type && String(v.index??'')===String(index??''));
+  const legacy=type==='legacy'?{name,jabatan:js.value||'—'}:null;
+  const item=eligible||legacy;
+  js.innerHTML=item?`<option value="${esc(item.jabatan||'')}">${esc(item.jabatan||'—')}</option>`:'<option value="">—</option>';
+  js.value=item?.jabatan||'';
+}
+function renderPenanggungjawabRows(values){
+  const wrap=document.getElementById('penanggungjawabRows'); if(!wrap)return;
+  const arr=Array.isArray(values)&&values.length?values:[{type:'',index:null,name:'',jabatan:''}];
+  wrap.innerHTML=`<div style="display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr) auto;gap:8px;margin-bottom:5px;font-size:12px;color:#475569;font-weight:600"><div>Nama Penanggungjawab</div><div>Jabatan</div><div></div></div>`+arr.map((v,i)=>`<div class="pj-row" style="display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr) auto;gap:8px;align-items:start;margin-bottom:8px">
+    <select class="pj-name" onchange="syncPenanggungjawabRow(this.closest('.pj-row'))">
+      <option value="">— Pilih Penanggungjawab —</option>${penanggungjawabOptions(v)}
+    </select>
+    <select class="pj-jabatan" disabled>
+      ${penanggungjawabJabatanOptions(v)||'<option value="">—</option>'}
+    </select>
+    <button type="button" class="btn danger" title="Hapus penanggungjawab" onclick="removePenanggungjawab(this)">Hapus</button>
+  </div>`).join('');
+}
+function addPenanggungjawab(){
+  const wrap=document.getElementById('penanggungjawabRows'); if(!wrap)return;
+  const row=document.createElement('div'); row.className='pj-row';
+  row.style.cssText='display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr) auto;gap:8px;align-items:start;margin-bottom:8px';
+  row.innerHTML=`<select class="pj-name" onchange="syncPenanggungjawabRow(this.closest('.pj-row'))"><option value="">— Pilih Penanggungjawab —</option>${penanggungjawabOptions(null)}</select>
+    <select class="pj-jabatan" disabled><option value="">—</option></select>
+    <button type="button" class="btn danger" onclick="removePenanggungjawab(this)">Hapus</button>`;
+  wrap.appendChild(row); row.querySelector('.pj-name')?.focus();
+}
+function removePenanggungjawab(btn){
+  const wrap=document.getElementById('penanggungjawabRows'); const row=btn?.closest('.pj-row'); if(row)row.remove();
+  if(wrap && !wrap.querySelector('.pj-row'))addPenanggungjawab();
+}
+function readPenanggungjawabs(){
+  return [...document.querySelectorAll('#penanggungjawabRows .pj-row')].map(row=>{
+    const ns=row.querySelector('.pj-name'), js=row.querySelector('.pj-jabatan');
+    const [type,index,name]=String(ns?.value||'').split('|');
+    if(!name)return null;
+    return {type:type==='tim'?'tim':type==='pegawai'?'pegawai':'legacy',index:index===''||index==null?null:Number(index),name,jabatan:js?.value||''};
+  }).filter(Boolean);
+}
+function renderPenanggungjawabList(x){
+  const arr=normalizePenanggungjawabs(x);
+  if(!arr.length)return '—';
+  return arr.map(v=>`<div style="margin-bottom:5px"><b>${esc(v.name)}</b>${v.jabatan?`<span class="employee-position">${esc(v.jabatan)}</span>`:''}</div>`).join('');
+}
+
+function openItemForm(x=null){
+let opts=levels.map(([k,n])=>`<option value="${k}" ${x?.level===k?"selected":""}>${n}</option>`).join("");
+let editId=Number(x?.id||0), editParent=Number(x?.parent||0); let parents=data.items.filter(i=>Number(i.id)!==editId).map(i=>`<option value="${i.id}" ${editParent && Number(i.id)===editParent?"selected":""}>[${levelName(i.level)}] ${esc(i.name)}</option>`).join("");
+document.getElementById("modalTitle").textContent=x?"Edit Data":"Tambah Data";
+document.getElementById("modalContent").innerHTML=`<div class="formgrid">
+<div><label>Level</label><select id="flevel" onchange="updateParentOptions()">${opts}</select></div>
+<div><label>Parent</label><select id="fparent"><option value="">— Tanpa parent —</option>${parents}</select></div>
+<div><label>Kode</label><input id="fcode" value="${esc(x?.code||"")}" placeholder="Kode kegiatan/sub kegiatan"></div><div><label>Nama/rumusan</label><input id="fname" value="${esc(x?.name||"")}"></div>
+<div class="full"><label>Indikator</label><div id="indicatorRows"></div><button type="button" class="btn secondary" style="margin-top:8px" onclick="addMasterIndicator()">＋ Tambah Indikator</button></div>
+<div class="full" id="activityMasterField" style="display:none"><label>Aktivitas Sub Kegiatan <span class="muted">(satu aktivitas per baris)</span></label><textarea id="factivities" rows="4" placeholder="Contoh:
+Menyiapkan bahan KUA
+Melakukan verifikasi dokumen
+Menyusun laporan"></textarea></div>
+<div><label>Output</label><input id="foutput" value="${esc(x?.output||"")}" placeholder="Output yang dihasilkan"></div>
+<div><label>Target</label><input id="ftarget" value="${esc(x?.target||"")}"></div>
+<div class="full"><label>Penanggung Jawab <span class="muted">(dapat lebih dari satu)</span></label>
+  <div id="penanggungjawabRows"></div>
+  <button type="button" class="btn secondary" style="margin-top:8px" onclick="addPenanggungjawab()">＋ Tambah Penanggungjawab</button>
+</div>
+<div><label>Keterangan</label><input id="fnote" value="${esc(x?.note||"")}"></div>
+<div class="full"><button class="btn primary" onclick="saveItem(${x?.id||0})">Simpan</button></div></div>`;
+window.__editingItemId=x?.id||0;
+const af=document.getElementById("activityMasterField");
+if(af){af.style.display=(x?.level==="subkegiatan"?"block":"none");const fa=document.getElementById("factivities");if(fa)fa.value=Array.isArray(x?.activities)?x.activities.join("\n"):"";}
+document.getElementById("modal").classList.add("show");
+renderMasterIndicatorInputs(getMasterIndicators(x));
+renderPenanggungjawabRows(normalizePenanggungjawabs(x));
+updateParentOptions();
+}
+function updateParentOptions(){
+  const current=Number(document.getElementById("fparent")?.value||0);
+  const level=document.getElementById("flevel")?.value;
+  let allowed=data.items.filter(i=>Number(i.id)!==Number(window.__editingItemId||0));
+  if(level==="kegiatan") allowed=allowed.filter(i=>i.level==="program");
+  else if(level==="subkegiatan") allowed=allowed.filter(i=>i.level==="kegiatan");
+  const selected=Number(data.items.find(i=>Number(i.id)===Number(window.__editingItemId||0))?.parent||current||0);
+  const el=document.getElementById("fparent");
+  if(!el)return;
+  el.innerHTML='<option value="">— Tanpa parent —</option>'+allowed.map(i=>`<option value="${i.id}" ${selected===Number(i.id)?"selected":""}>[${levelName(i.level)}] ${esc(i.name)}</option>`).join("");
+}
+function saveItem(id){
+  const indicators=readMasterIndicators();
+  let o={id:id||Date.now(),level:flevel.value,code:fcode.value.trim(),name:fname.value.trim(),indicators:indicators,indicator:indicators.join(' | '),output:foutput.value.trim(),target:ftarget.value.trim(),penanggungjawabs:readPenanggungjawabs(),penanggungjawab:readPenanggungjawabs().map(v=>v.name).filter(Boolean).join('; '),parent:fparent.value?Number(fparent.value):null,note:fnote.value.trim()};
+  if(o.level==="subkegiatan"){o.activities=(document.getElementById("factivities")?.value||"").split(/\r?\n/).map(x=>x.trim()).filter(Boolean)}if(!o.name)return alert("Nama/rumusan wajib diisi.");
+  if(o.level==="kegiatan" && o.parent){let p=data.items.find(i=>i.id===o.parent);if(!p||p.level!=="program")return alert("Kegiatan harus langsung berada di bawah Program.");}
+  if(o.level==="subkegiatan" && o.parent){let p=data.items.find(i=>i.id===o.parent);if(!p||p.level!=="kegiatan")return alert("Sub Kegiatan harus berada di bawah Kegiatan.");}if(id){let i=data.items.findIndex(x=>x.id===id);o._sort=data.items[i]?._sort??i+1;data.items[i]=o}else{o._sort=data.items.filter(x=>x.level===o.level).reduce((m,x)=>Math.max(m,x._sort??0),0)+1;data.items.push(o)}closeModal();save()}
+function delItem(id){if(data.items.some(x=>x.parent===id))return alert("Data tidak dapat dihapus karena masih memiliki child. Hapus/pindahkan child terlebih dahulu.");if(confirm("Hapus data ini?")){data.items=data.items.filter(x=>x.id!==id);data.employees=data.employees.filter(e=>e.item!==id);save()}}
+function closeModal(){document.getElementById("modal").classList.remove("show")}
+
+function normalizeEmployeeSubGroups(){
+  data.employeeSubGroups=Array.isArray(data.employeeSubGroups)?data.employeeSubGroups:[];
+  // Remove invalid/duplicate links.
+  const seen=new Set();
+  data.employeeSubGroups=data.employeeSubGroups.filter(x=>{
+    const ei=Number(x.employeeIndex), si=Number(x.subId);
+    if(!Number.isInteger(ei)||!Number.isInteger(si)||!data.employees[ei]||!data.items.some(m=>Number(m.id)===si&&m.level==='subkegiatan')) return false;
+    const k=ei+'|'+si; if(seen.has(k)) return false; seen.add(k);
+    x.employeeIndex=ei; x.subId=si; return true;
+  });
+  // Existing assignments establish membership automatically.
+  (data.assignments||[]).forEach(a=>{
+    const ei=Number(a.employeeIndex), si=Number(a.subId);
+    if(data.employees[ei] && data.items.some(m=>Number(m.id)===si&&m.level==='subkegiatan')){
+      const k=ei+'|'+si;
+      if(!seen.has(k)){seen.add(k);data.employeeSubGroups.push({employeeIndex:ei,subId:si});}
+    }
+  });
+}
+function employeeBelongsToSub(empIndex,subId){
+  normalizeEmployeeSubGroups();
+  return data.employeeSubGroups.some(x=>Number(x.employeeIndex)===Number(empIndex)&&Number(x.subId)===Number(subId));
+}
+function getEmployeeSubIds(empIndex){
+  normalizeEmployeeSubGroups();
+  return data.employeeSubGroups.filter(x=>Number(x.employeeIndex)===Number(empIndex)).map(x=>Number(x.subId));
+}
+function renderEmployeeSubGroups(){
+  const host=document.getElementById('employeeSubGroupDashboard'); if(!host)return;
+  normalizeEmployeeSubGroups();
+  const groups=new Map();
+  data.employeeSubGroups.forEach(link=>{
+    const sub=data.items.find(x=>Number(x.id)===Number(link.subId));
+    const emp=data.employees[Number(link.employeeIndex)];
+    if(!sub||!emp)return;
+    if(!groups.has(sub.id))groups.set(sub.id,{sub,employees:[]});
+    groups.get(sub.id).employees.push(emp);
+  });
+  const groupsArr=[...groups.values()].sort((a,b)=>
+    String(a.sub.code||'').localeCompare(String(b.sub.code||''),undefined,{numeric:true,sensitivity:'base'})||
+    String(a.sub.name||'').localeCompare(String(b.sub.name||''),undefined,{sensitivity:'base'})
+  );
+  host.innerHTML=groupsArr.length?groupsArr.map(g=>{
+    // Penanggungjawab selalu diambil otomatis dari Master Cascading untuk Sub Kegiatan ini.
+    // Satu Sub Kegiatan dapat memiliki lebih dari satu Penanggungjawab.
+    const pjs=normalizePenanggungjawabs(g.sub);
+    const pjIndexes=new Set(pjs.filter(v=>v.type==='pegawai' && Number.isInteger(v.index)).map(v=>Number(v.index)));
+    const pjNames=new Set(pjs.filter(v=>v.name).map(v=>String(v.name).trim().toLowerCase()));
+    const emps=[...new Map(g.employees.map(e=>[e.name+'|'+e.unit,e])).values()]
+      .sort((a,b)=>employeeSort(a,b));
+    const pjCards=pjs.length ? pjs.map(v=>{
+      if(v.type==='tim') return `<div class="employee-subgroup-person"><div><b>${esc(v.name)}</b><br><small>Penanggungjawab</small></div></div>`;
+      const emp=(Number.isInteger(v.index)?data.employees[Number(v.index)]:null) || emps.find(e=>String(e.name||'').trim().toLowerCase()===String(v.name||'').trim().toLowerCase());
+      const pjJabatan=emp?.jabatan||v.jabatan||'—';
+      const pjPangkat=emp?.pangkat||v.pangkat||'—';
+      const pjGolongan=emp?.golongan||v.golongan||'—';
+      return `<div class="employee-subgroup-person"><div><b>${esc(emp?.name||v.name)}</b><br><small>${esc(pjJabatan)} / ${esc(pjPangkat)} / (${esc(pjGolongan)})</small></div></div>`;
+    }).join('') : `<div class="sub" style="margin:0">Belum ditentukan pada Master Cascading.</div>`;
+    const pelaksana=emps.filter(e=>{
+      const idx=data.employees.indexOf(e);
+      return !pjIndexes.has(idx) && !pjNames.has(String(e.name||'').trim().toLowerCase());
+    });
+    const pelaksanaHtml=pelaksana.length ? pelaksana.map(e=>`<div class="employee-subgroup-person"><div><b>${esc(e.name)}</b><br><small>${esc(e.jabatan||'—')} / ${esc(e.pangkat||'—')} / (${esc(e.golongan||'—')})</small></div></div>`).join('') : `<div class="sub" style="margin:0">Belum ada pelaksana Sub Kegiatan.</div>`;
+    return `<div class="employee-subgroup"><div class="employee-subgroup-title">${g.sub.code?esc(g.sub.code)+' — ':''}${esc(g.sub.name)}</div>
+      <div style="margin:10px 0 5px;font-weight:700">Penanggungjawab Sub Kegiatan</div>
+      <div class="employee-subgroup-list">${pjCards}</div>
+      <div style="margin:12px 0 5px;font-weight:700">Pelaksana Sub Kegiatan</div>
+      <div class="employee-subgroup-list">${pelaksanaHtml}</div>
+    </div>`;
+  }).join(''):'<div class="sub">Belum ada pengelompokan pegawai. Edit pegawai lalu pilih satu atau beberapa Sub Kegiatan.</div>';
+}
+function renderEmployees(){
+  let arr=data.employees.map((e,i)=>({e,i})).sort((a,b)=>employeeSort(a.e,b.e));
+  document.getElementById("empBody").innerHTML=arr.map((x,i)=>{
+    let e=x.e;
+    let tags=getEmployeeSubIds(x.i).map(id=>{let m=data.items.find(z=>Number(z.id)===id);return m?`<span class="emp-sub-tag">${m.code?esc(m.code)+' — ':''}${esc(m.name)}</span>`:''}).join('')||'<span class="sub">Belum dikelompokkan</span>';
+    return `<tr><td>${i+1}</td><td>${esc(e.unit)}</td><td>${esc(e.name)}</td><td>${esc(e.pangkat||'—')}</td><td>${esc(e.golongan||'—')}</td><td>${esc(e.jabatan)}</td><td>${tags}</td><td><button class="btn secondary" onclick="editEmployee(${x.i})">Edit</button> <button class="btn danger" onclick="delEmployee(${x.i})">Hapus</button></td></tr>`
+  }).join("")||`<tr><td colspan="8">Belum ada pegawai.</td></tr>`;
+}
+function openEmployee(index=null){
+  let e=index===null?null:data.employees[index];
+  let selected=index===null?[]:getEmployeeSubIds(index);
+  let subs=data.items.filter(x=>x.level==='subkegiatan').sort((a,b)=>String(a.code||'').localeCompare(String(b.code||''),undefined,{numeric:true,sensitivity:'base'})||String(a.name||'').localeCompare(String(b.name||''),undefined,{sensitivity:'base'}));
+  document.getElementById("modalTitle").textContent=e?"Edit Pegawai":"Tambah Pegawai";
+  document.getElementById("modalContent").innerHTML=`<div class="formgrid">
+    <div><label>Unit</label><input id="eunit" value="${esc(e?.unit||'Badan Keuangan Daerah')}"></div>
+    <div><label>Nama Pegawai</label><input id="ename" value="${esc(e?.name||'')}"></div>
+    <div><label>Pangkat</label><input id="epangkat" value="${esc(e?.pangkat||'')}"></div>
+    <div><label>Golongan</label><input id="egolongan" value="${esc(e?.golongan||'')}" placeholder="Contoh: III/c"></div>
+    <div><label>Jabatan</label><input id="ejabatan" value="${esc(e?.jabatan||'')}"></div>
+    <div class="full"><label>Kelompok Sub Kegiatan <span class="sub">(boleh pilih lebih dari satu)</span></label>
+      <div class="sub-check-grid">${subs.map(x=>`<label class="sub-check"><input type="checkbox" class="employee-sub-check" value="${x.id}" ${selected.includes(Number(x.id))?'checked':''}><span>${x.code?esc(x.code)+' — ':''}${esc(x.name)}</span></label>`).join('')||'<div class="sub">Belum ada Sub Kegiatan di Master Cascading.</div>'}</div>
+    </div>
+    <div class="full"><button class="btn primary" onclick="saveEmployee(${index===null?-1:index})">Simpan</button></div>
+  </div>`;
+  document.getElementById("modal").classList.add("show");
+}
+function editEmployee(i){openEmployee(i)}
+function saveEmployee(i){
+  if(!ename.value.trim())return alert("Nama pegawai wajib diisi.");
+  let e={name:ename.value.trim(),pangkat:epangkat.value.trim(),golongan:egolongan.value.trim(),jabatan:ejabatan.value.trim(),unit:eunit.value.trim()};
+  let selected=[...document.querySelectorAll('.employee-sub-check:checked')].map(x=>Number(x.value));
+  if(i<0){data.employees.push(e);i=data.employees.length-1}else data.employees[i]=Object.assign(data.employees[i],e);
+  normalizeEmployeeSubGroups();
+  data.employeeSubGroups=data.employeeSubGroups.filter(x=>Number(x.employeeIndex)!==Number(i));
+  selected.forEach(subId=>data.employeeSubGroups.push({employeeIndex:i,subId}));
+  closeModal();save();
+}
+function delEmployee(i){
+  if(confirm("Hapus pegawai? Penugasan pegawai ini juga akan dihapus.")){
+    data.employees.splice(i,1);
+    data.assignments=data.assignments.filter(a=>Number(a.employeeIndex)!==Number(i));
+    data.assignments.forEach(a=>{if(Number(a.employeeIndex)>Number(i))a.employeeIndex=Number(a.employeeIndex)-1});
+    data.employeeSubGroups=data.employeeSubGroups.filter(x=>Number(x.employeeIndex)!==Number(i));
+    data.employeeSubGroups.forEach(x=>{if(Number(x.employeeIndex)>Number(i))x.employeeIndex=Number(x.employeeIndex)-1});
+    save();
+  }
+}
+function assignmentInit(){let units=[...new Set(data.employees.map(e=>e.unit))].sort((a,b)=>String(a).localeCompare(String(b),undefined,{sensitivity:'base'}));aunit.innerHTML='<option value="">-- Pilih Unit --</option>'+units.map(u=>`<option>${esc(u)}</option>`).join('');aprogram.innerHTML='<option value="">-- Pilih Program --</option>'+data.items.filter(x=>x.level==='program').sort((a,b)=>String(a.code||'').localeCompare(String(b.code||''),undefined,{numeric:true,sensitivity:'base'})||String(a.name||'').localeCompare(String(b.name||''),undefined,{sensitivity:'base'})).map(x=>`<option value="${x.id}">${x.code?esc(x.code)+' — ':''}${esc(x.name)}</option>`).join('');assignmentFilterKegiatan();assignmentFilterSub();assignmentFilterEmployees();ensureActivityRow();renderAssignments()}
+function assignmentFilterEmployees(){
+  normalizeEmployeeSubGroups();
+  const subId=Number(asub?.value||0);
+  const unit=String(aunit?.value||'');
+  const current=Number(apegawai?.value||-1);
+  let arr=data.employees.map((e,i)=>({e,i}));
+  if(subId>0){
+    const ids=new Set(data.employeeSubGroups.filter(x=>Number(x.subId)===subId).map(x=>Number(x.employeeIndex)));
+    arr=arr.filter(x=>ids.has(x.i));
+    if(unit)arr=arr.filter(x=>String(x.e.unit||'')===unit);
+  }else if(unit){
+    arr=arr.filter(x=>String(x.e.unit||'')===unit);
+  }
+  arr.sort((a,b)=>employeeSort(a.e,b.e));
+  apegawai.innerHTML='<option value="">-- Pilih Pegawai --</option>'+arr.map(x=>`<option value="${x.i}">${esc(x.e.name)} — ${esc(x.e.jabatan||'')}</option>`).join('');
+  if(current>=0&&arr.some(x=>x.i===current))apegawai.value=String(current);
+  const hint=document.getElementById('employeeGroupHint');
+  if(hint)hint.textContent=subId>0?(arr.length?`Menampilkan ${arr.length} pegawai yang terdaftar pada Sub Kegiatan ini.`:'Belum ada pegawai yang dikelompokkan pada Sub Kegiatan ini.'):'Pilih Sub Kegiatan terlebih dahulu untuk menampilkan pegawai sesuai kelompok.';
+}
+function assignmentFilterKegiatan(){let p=Number(aprogram.value);let arr=data.items.filter(x=>x.level==='kegiatan'&&(!p||x.parent===p)).sort((a,b)=>String(a.code||'').localeCompare(String(b.code||''),undefined,{numeric:true,sensitivity:'base'})||String(a.name||'').localeCompare(String(b.name||''),undefined,{sensitivity:'base'}));akegiatan.innerHTML='<option value="">-- Pilih Kegiatan --</option>'+arr.map(x=>`<option value="${x.id}">${x.code?esc(x.code)+' — ':''}${esc(x.name)}</option>`).join('');assignmentFilterSub()}
+function assignmentFilterSub(){let k=Number(akegiatan.value);let arr=data.items.filter(x=>x.level==='subkegiatan'&&x.parent===k).sort((a,b)=>String(a.code||'').localeCompare(String(b.code||''),undefined,{numeric:true,sensitivity:'base'})||String(a.name||'').localeCompare(String(b.name||''),undefined,{sensitivity:'base'}));asub.innerHTML=arr.map(x=>`<option value="${x.id}">${x.code?esc(x.code)+' — ':''}${esc(x.name)}</option>`).join('')||'<option value="">-- Tidak ada Sub Kegiatan --</option>';assignmentFilterMasterActivity();assignmentFilterEmployees()}
+function assignmentFilterMasterActivity(selectedValues=[]){
+  let id=Number(asub.value),m=data.items.find(x=>x.id===id);
+  let arr=Array.isArray(m?.activities)?m.activities.filter(Boolean):[];
+  const box=document.getElementById('aaktivitasSub');
+  if(!box)return;
+  const selected=new Set((selectedValues||[]).map(String));
+  box.innerHTML=arr.length ? arr.map((x,i)=>`<label class="activity-sub-option"><input type="checkbox" class="activity-sub-checkbox" value="${i}" ${selected.has(String(i))?'checked':''}><span>${esc(x)}</span></label>`).join('') : '<div class="muted">-- Belum ada Aktivitas Sub Kegiatan di Master Cascading --</div>';
+  const hint=document.getElementById('activitySubHint');
+  if(hint)hint.textContent=arr.length?`Tersedia ${arr.length} Aktivitas Sub Kegiatan. Centang semua yang akan ditugaskan.`:'Belum ada Aktivitas Sub Kegiatan pada Sub Kegiatan ini.';
+}
+function addActivityRow(activity='',indicator='',activityOrder=''){const wrap=document.getElementById('activityRows');if(!wrap)return;const row=document.createElement('div');row.className='activity-row';row.style.cssText='display:grid;grid-template-columns:70px 1fr 1fr auto;gap:10px;align-items:start;margin-bottom:10px;padding:10px;background:#f8fafc;border:1px solid var(--border);border-radius:8px';row.innerHTML=`<div><label>Urutan</label><input type="number" min="1" step="1" class="activity-order-input" value="${activityOrder!==''?Number(activityOrder):''}" placeholder="Auto"></div><div><label>Aktivitas</label><textarea class="activity-input" placeholder="Aktivitas yang dilaksanakan">${esc(activity)}</textarea></div><div><label>Indikator Aktivitas</label><textarea class="indicator-input" placeholder="Indikator untuk aktivitas ini">${esc(indicator)}</textarea></div><div style="padding-top:22px"><button type="button" class="btn danger" onclick="this.closest('.activity-row').remove();ensureActivityRow()">Hapus</button></div>`;wrap.appendChild(row)}
+function ensureActivityRow(){const wrap=document.getElementById('activityRows');if(wrap&&!wrap.querySelector('.activity-row'))addActivityRow()}
+let editingAssignmentId=null;
+
+function saveAssignment(){
+  let subId=Number(asub.value),emp=Number(apegawai.value);
+  let m=data.items.find(x=>x.id===subId),e=data.employees[emp];
+  if(!m||!e)return alert('Pilih Sub Kegiatan dan Pegawai.');
+
+  const checked=[...document.querySelectorAll('#aaktivitasSub .activity-sub-checkbox:checked')];
+  if(!checked.length)return alert('Pilih minimal satu Aktivitas Sub Kegiatan.');
+
+  let rows=[...document.querySelectorAll('#activityRows .activity-row')];
+  let entries=rows.map(r=>{
+    const raw=r.querySelector('.activity-order-input')?.value.trim()||'';
+    return {
+      activity:r.querySelector('.activity-input')?.value.trim()||'',
+      indicator:r.querySelector('.indicator-input')?.value.trim()||'',
+      order:raw===''?null:Math.max(1,Number(raw))
+    };
+  });
+  if(!entries.length)return alert('Tambahkan minimal satu aktivitas.');
+  if(entries.some(x=>!x.activity||!x.indicator))return alert('Setiap aktivitas wajib memiliki indikator aktivitas masing-masing.');
+
+  const selectedActivitySubs=checked
+    .map(cb=>({index:Number(cb.value),name:String(m.activities?.[Number(cb.value)]||'').trim()}))
+    .filter(x=>x.name);
+
+  if(!selectedActivitySubs.length)return alert('Aktivitas Sub Kegiatan yang dipilih tidak valid.');
+
+  if(editingAssignmentId!==null){
+    // Jika yang diedit adalah baris hasil penggabungan PNS + P3K, seluruh
+    // anggota kelompok lama diganti sesuai checkbox yang dipilih sekarang.
+    const old=data.assignments.find(x=>x.id===editingAssignmentId);
+    if(old){
+      const oldGroup=data.assignments.filter(x=>
+        Number(x.employeeIndex)===Number(old.employeeIndex) &&
+        Number(x.subId)===Number(old.subId) &&
+        String(x.activity||'').trim().toLowerCase()===String(old.activity||'').trim().toLowerCase() &&
+        String(x.indicator||'').trim().toLowerCase()===String(old.indicator||'').trim().toLowerCase()
+      );
+      const oldIds=new Set(oldGroup.map(x=>x.id));
+      data.assignments=data.assignments.filter(x=>!oldIds.has(x.id));
+      const now=Date.now();
+      let seq=0;
+      selectedActivitySubs.forEach(sel=>{
+        entries.forEach(x=>{
+          data.assignments.push({
+            id:now+(seq++),subId,employeeIndex:emp,activitySub:sel.name,
+            activity:x.activity,indicator:x.indicator,order:x.order
+          });
+        });
+      });
+    }
+    editingAssignmentId=null;
+  }else{
+    const now=Date.now();
+    let seq=0;
+    // Satu pegawai dapat ditugaskan pada beberapa Aktivitas Sub Kegiatan
+    // dalam Sub Kegiatan yang sama. Masing-masing pilihan dibuat sebagai
+    // kelompok penugasan tersendiri.
+    selectedActivitySubs.forEach(sel=>{
+      const group=data.assignments.filter(a =>
+        Number(a.employeeIndex)===emp &&
+        Number(a.subId)===subId &&
+        String(a.activitySub||'')===String(sel.name)
+      );
+      const maxOrder=group.reduce((mx,a)=>Math.max(mx,Number(a.order)||0),0);
+      let nextOrder=maxOrder+1;
+      entries.forEach(x=>{
+        const order=(x.order==null)?nextOrder++:x.order;
+        data.assignments.push({
+          id:now+(seq++),subId,employeeIndex:emp,activitySub:sel.name,
+          activity:x.activity,indicator:x.indicator,order
+        });
+      });
+    });
+  }
+  save();
+  clearAssignmentForm();
+}
+
+function clearAssignmentForm(){
+  editingAssignmentId=null;
+  const wrap=document.getElementById('activityRows');
+  if(wrap){wrap.innerHTML='';addActivityRow()}
+  document.querySelectorAll('#aaktivitasSub .activity-sub-checkbox').forEach(cb=>cb.checked=false);
+}
+
+function editAssignment(id){
+  let a=data.assignments.find(x=>x.id===id);
+  if(!a)return;
+  let m=data.items.find(x=>x.id===a.subId),e=data.employees[a.employeeIndex];
+  if(!m||!e)return;
+  editingAssignmentId=id;
+
+  // Saat mengedit satu baris hasil penggabungan, ambil seluruh Aktivitas Sub
+  // Kegiatan yang tergabung pada aktivitas + indikator yang sama.
+  const group=data.assignments.filter(x=>
+    Number(x.employeeIndex)===Number(a.employeeIndex) &&
+    Number(x.subId)===Number(a.subId) &&
+    String(x.activity||'').trim().toLowerCase()===String(a.activity||'').trim().toLowerCase() &&
+    String(x.indicator||'').trim().toLowerCase()===String(a.indicator||'').trim().toLowerCase()
+  );
+
+  aunit.value=e.unit;
+  assignmentFilterEmployees();
+  apegawai.value=a.employeeIndex;
+
+  let k=data.items.find(x=>x.id===m.parent),p=k&&data.items.find(x=>x.id===k.parent);
+  aprogram.value=p?.id||'';
+  assignmentFilterKegiatan();
+  akegiatan.value=k?.id||'';
+  assignmentFilterSub();
+  asub.value=m.id;
+  assignmentFilterMasterActivity();
+
+  const mActivities=Array.isArray(m.activities)?m.activities:[];
+  const selectedIndexes=group.map(g=>mActivities.findIndex(x=>String(x)===String(g.activitySub)))
+    .filter(i=>i>=0).map(String);
+  assignmentFilterMasterActivity([...new Set(selectedIndexes)]);
+
+  const wrap=document.getElementById('activityRows');
+  if(wrap){
+    wrap.innerHTML='';
+    const first=group.slice().sort((x,y)=>(Number(x.order)||999999)-(Number(y.order)||999999))[0]||a;
+    addActivityRow(first.activity,first.indicator,first.order||1);
+  }
+}
+
+function delAssignment(id){
+  const a=data.assignments.find(x=>x.id===id);
+  if(!a)return;
+  // Hapus seluruh baris yang sebelumnya digabung menjadi satu tampilan.
+  const group=data.assignments.filter(x=>
+    Number(x.employeeIndex)===Number(a.employeeIndex) &&
+    Number(x.subId)===Number(a.subId) &&
+    String(x.activity||'').trim().toLowerCase()===String(a.activity||'').trim().toLowerCase() &&
+    String(x.indicator||'').trim().toLowerCase()===String(a.indicator||'').trim().toLowerCase()
+  );
+  if(confirm(group.length>1?`Hapus penugasan ini beserta ${group.length-1} Aktivitas Sub Kegiatan yang digabung?`:'Hapus aktivitas paralel?')){
+    const ids=new Set(group.map(x=>x.id));
+    data.assignments=data.assignments.filter(x=>!ids.has(x.id));
+    save();
+  }
+}
+
+let draggedAssignmentId=null;
+function assignmentGroupKey(a){return `${Number(a.employeeIndex)}|${Number(a.subId)}|${String(a.activitySub||'')}`;}
+function bindAssignmentDrag(){
+  const body=document.getElementById('assignmentBody'); if(!body)return;
+  body.querySelectorAll('tr[data-assignment-id]').forEach(tr=>{
+    tr.classList.add('activity-draggable'); tr.draggable=true;
+    tr.addEventListener('dragstart',e=>{draggedAssignmentId=Number(tr.dataset.assignmentId);tr.classList.add('activity-dragging');e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',String(draggedAssignmentId));});
+    tr.addEventListener('dragend',()=>{tr.classList.remove('activity-dragging');body.querySelectorAll('.drop-target').forEach(x=>x.classList.remove('drop-target'));draggedAssignmentId=null;});
+    tr.addEventListener('dragover',e=>{e.preventDefault();const targetId=Number(tr.dataset.assignmentId);if(!draggedAssignmentId||targetId===draggedAssignmentId)return;const a=data.assignments.find(x=>x.id===draggedAssignmentId),b=data.assignments.find(x=>x.id===targetId);if(!a||!b||assignmentGroupKey(a)!==assignmentGroupKey(b))return;e.dataTransfer.dropEffect='move';tr.classList.add('drop-target');});
+    tr.addEventListener('dragleave',()=>tr.classList.remove('drop-target'));
+    tr.addEventListener('drop',e=>{e.preventDefault();tr.classList.remove('drop-target');const targetId=Number(tr.dataset.assignmentId);if(!draggedAssignmentId||targetId===draggedAssignmentId)return;reorderAssignments(draggedAssignmentId,targetId);});
+  });
+}
+function reorderAssignments(dragId,targetId){
+  const drag=data.assignments.find(x=>x.id===dragId),target=data.assignments.find(x=>x.id===targetId);
+  if(!drag||!target||assignmentGroupKey(drag)!==assignmentGroupKey(target)){alert('Urutan hanya dapat diubah di dalam kelompok Pegawai + Sub Kegiatan + Aktivitas Sub Kegiatan yang sama.');return;}
+  const group=data.assignments.filter(x=>assignmentGroupKey(x)===assignmentGroupKey(drag)).sort((a,b)=>(Number(a.order)||999999)-(Number(b.order)||999999));
+  const from=group.findIndex(x=>x.id===dragId),to=group.findIndex(x=>x.id===targetId); if(from<0||to<0)return;
+  const moved=group.splice(from,1)[0]; group.splice(to,0,moved); group.forEach((a,i)=>a.order=i+1); save();
+}
+
+function renderAssignmentCounts(){
+  const box=document.getElementById("assignmentCounts");
+  if(!box)return;
+  const rows=(data.assignments||[]).map(a=>{
+    const m=data.items.find(x=>x.id===Number(a.subId));
+    const k=m&&data.items.find(x=>x.id===Number(m.parent));
+    const p=k&&data.items.find(x=>x.id===Number(k.parent));
+    return {a,m,k,p,e:data.employees[a.employeeIndex]};
+  }).filter(x=>x.m&&x.k);
+  const programs=new Set(rows.map(x=>Number(x.p?.id)).filter(Number.isFinite));
+  const kegiatan=new Set(rows.map(x=>Number(x.k?.id)).filter(Number.isFinite));
+  const subkegiatan=new Set(rows.map(x=>Number(x.m?.id)).filter(Number.isFinite));
+  // Rekap pegawai dihitung berdasarkan NAMA unik, bukan jumlah penugasan.
+  // Jika nama pegawai muncul pada beberapa aktivitas/penugasan, tetap dihitung 1 orang.
+  const employeeNames=new Set(rows.map(x=>String(x.e?.name||'').trim().toLowerCase()).filter(Boolean));
+  // Ringkasan mengikuti jumlah baris AKTUAL yang tampil setelah aktivitas
+  // PNS/P3K (atau beberapa Aktivitas Sub Kegiatan lain) digabung berdasarkan
+  // Pegawai + Sub Kegiatan + Uraian Aktivitas + Indikator. Jadi jika tabel
+  // berakhir pada nomor 115, ringkasan No. Urut dan Aktivitas juga menunjukkan 115.
+  const displayGroups=new Set(rows.map(x=>`${Number(x.a.employeeIndex)}|${Number(x.a.subId)}|${String(x.a.activity||'').trim().toLowerCase()}|${String(x.a.indicator||'').trim().toLowerCase()}`));
+  const total=displayGroups.size;
+  box.innerHTML=`<span class="assignment-count">No. Urut <b>${total}</b></span><span class="assignment-count">Program <b>${programs.size}</b></span><span class="assignment-count">Kegiatan <b>${kegiatan.size}</b></span><span class="assignment-count">Sub Kegiatan <b>${subkegiatan.size}</b></span><span class="assignment-count">Pegawai <b>${employeeNames.size}</b></span><span class="assignment-count">Aktivitas <b>${total}</b></span>`;
+}
+
+function renderAssignments(){
+  renderAssignmentCounts();
+  const refs=buildReferenceMap();
+  const rows=data.assignments.map((a,i)=>{
+    let m=data.items.find(x=>x.id===a.subId),
+        k=m&&data.items.find(x=>x.id===m.parent),
+        p=k&&data.items.find(x=>x.id===k.parent),
+        e=data.employees[a.employeeIndex];
+    if(!m||!k||!e)return null;
+    return {a,m,k,p,e,original:i};
+  }).filter(Boolean);
+
+  // Urutan dasar tetap mengikuti hierarki Cascading.
+  const codeParts=v=>String(v||'').match(/\d+/g)?.map(Number)||[];
+  const cmpCode=(a,b)=>{
+    const pa=codeParts(a),pb=codeParts(b),n=Math.max(pa.length,pb.length);
+    for(let i=0;i<n;i++){
+      const da=pa[i]??-1,db=pb[i]??-1;
+      if(da!==db)return da-db;
+    }
+    return String(a||'').localeCompare(String(b||''),undefined,{numeric:true,sensitivity:'base'});
+  };
+  rows.sort((x,y)=>{
+    let c=cmpCode(x.p?.code,y.p?.code); if(c)return c;
+    c=String(x.p?.name||'').localeCompare(String(y.p?.name||''),undefined,{numeric:true,sensitivity:'base'}); if(c)return c;
+    c=cmpCode(x.k?.code,y.k?.code); if(c)return c;
+    c=String(x.k?.name||'').localeCompare(String(y.k?.name||''),undefined,{numeric:true,sensitivity:'base'}); if(c)return c;
+    c=cmpCode(x.m?.code,y.m?.code); if(c)return c;
+    c=String(x.m?.name||'').localeCompare(String(y.m?.name||''),undefined,{numeric:true,sensitivity:'base'}); if(c)return c;
+    c=employeeSort(x.e,y.e); if(c)return c;
+    const oa=Number(x.a.order)||999999,ob=Number(y.a.order)||999999;
+    if(oa!==ob)return oa-ob;
+    c=String(x.a.activity||'').localeCompare(String(y.a.activity||''),undefined,{numeric:true,sensitivity:'base'}); if(c)return c;
+    c=String(x.a.indicator||'').localeCompare(String(y.a.indicator||''),undefined,{numeric:true,sensitivity:'base'}); if(c)return c;
+    return String(x.a.activitySub||'').localeCompare(String(y.a.activitySub||''),undefined,{numeric:true,sensitivity:'base'}) || x.original-y.original;
+  });
+
+  // SATUKAN tampilan penugasan yang sama untuk pegawai + sub kegiatan +
+  // uraian aktivitas + indikator, walaupun Aktivitas Sub Kegiatannya berbeda.
+  // Contoh: Juliana pada aktivitas nomor 1 di PNS dan P3K tampil sebagai
+  // satu baris "Juliana - 1", bukan dua baris "1" dan "3".
+  const grouped=new Map();
+  rows.forEach(x=>{
+    const key=`${Number(x.a.employeeIndex)}|${Number(x.a.subId)}|${String(x.a.activity||'').trim().toLowerCase()}|${String(x.a.indicator||'').trim().toLowerCase()}`;
+    if(!grouped.has(key))grouped.set(key,{...x,items:[x]});
+    else grouped.get(key).items.push(x);
+  });
+  const displayRows=[...grouped.values()];
+
+  // Nomor aktivitas dihitung setelah penggabungan tampilan, sehingga aktivitas
+  // yang sama pada PNS + P3K memperoleh satu nomor yang sama.
+  const employeeSubActivityNo=new Map();
+  const html=displayRows.map((g,i)=>{
+    const {m,k,p,e}=g;
+    const prev=i>0?displayRows[i-1]:null;
+    const pChanged=i===0 || Number(prev?.p?.id)!==Number(p?.id);
+    const kChanged=pChanged || Number(prev?.k?.id)!==Number(k?.id);
+    const mChanged=kChanged || Number(prev?.m?.id)!==Number(m?.id);
+    const eChanged=mChanged || String(prev?.e?.name||'').trim().toLowerCase()!==String(e?.name||'').trim().toLowerCase();
+    const a=g.a;
+    const keyEmpSub=`${Number(a.employeeIndex)}|${Number(a.subId)}`;
+    const no=(employeeSubActivityNo.get(keyEmpSub)||0)+1;
+    employeeSubActivityNo.set(keyEmpSub,no);
+
+    // Tampilkan Aktivitas Sub Kegiatan mengikuti urutan yang tersimpan di Master Cascading.
+    // Nomor dibuat berdasarkan posisi aktivitas pada array activities milik Sub Kegiatan.
+    // Ini membuat contoh PNS/P3K tampil konsisten, misalnya:
+    // 1. Penyediaan Gaji dan Tunjangan PNS
+    // 2. Penyediaan Gaji dan Tunjangan P3K
+    const masterActivities=Array.isArray(m?.activities)?m.activities.map(x=>String(x||'').trim()).filter(Boolean):[];
+    const selectedNames=[...new Set(g.items.map(x=>String(x.a.activitySub||'').trim()).filter(Boolean))];
+    const activitySubs=selectedNames.sort((a,b)=>{
+      const ia=masterActivities.findIndex(x=>x.toLowerCase()===a.toLowerCase());
+      const ib=masterActivities.findIndex(x=>x.toLowerCase()===b.toLowerCase());
+      if(ia>=0&&ib>=0)return ia-ib;
+      if(ia>=0)return -1;
+      if(ib>=0)return 1;
+      return a.localeCompare(b,undefined,{numeric:true,sensitivity:'base'});
+    });
+    const activitySubText=activitySubs.length===1
+      ? esc(activitySubs[0])
+      : activitySubs.length>1
+        ? activitySubs.map(x=>{
+            const masterIndex=masterActivities.findIndex(v=>v.toLowerCase()===x.toLowerCase());
+            const no=masterIndex>=0?masterIndex+1:'';
+            return `<div style="display:grid;grid-template-columns:max-content minmax(0,1fr);column-gap:5px;align-items:start"><span style="font-weight:600;min-width:18px">${no?no+'.':''}</span><span>${esc(x)}</span></div>`;
+          }).join('')
+        : '—';
+    const groupIds=g.items.map(x=>x.a.id);
+    const programText=p?`${itemDisplay(p,refs,false)}${refs.get(p.id)?` <span class="muted">[Ref ${esc(refs.get(p.id))}]</span>`:''}`:'—';
+    const firstId=a.id;
+    // Buat baris identitas berwarna hanya saat nilai unik berubah.
+    // Bentuknya mengikuti contoh: sel pertama berisi label, sedangkan sel
+    // lainnya menjadi bidang warna lembut. Baris data tetap putih.
+    const band=(type,label,value,id)=>{
+      const fill={program:'#dbe7f8',kegiatan:'#fff0c7',subkegiatan:'#dff0df',pegawai:'#f5d8e9'}[type]||'#eef2f7';
+      const border={program:'#7d9fce',kegiatan:'#d7b24b',subkegiatan:'#73a873',pegawai:'#c47aa6'}[type]||'#94a3b8';
+      const labelText=esc(label);
+      const valueText=esc(value||'—');
+      const aria=`${label}: ${value||'—'}`.replace(/"/g,'&quot;');
+      /* Gunakan SVG INLINE sebagai objek grafis nyata, bukan background CSS.
+         Inline SVG sengaja dipakai agar Blink/Chrome tetap memasukkan fill ke
+         print rendering dan Print Preview tanpa membutuhkan "Background graphics". */
+      return `<tr class="hierarchy-band ${type}" data-hierarchy-band="${type}" data-hierarchy-id="${esc(String(id??''))}"><td colspan="10"><svg class="hierarchy-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 30" preserveAspectRatio="none" role="img" aria-label="${aria}"><rect x="0" y="0" width="1200" height="30" fill="${fill}" stroke="${border}" stroke-width="1" vector-effect="non-scaling-stroke"/><text x="10" y="20" font-family="Arial, sans-serif" font-size="13" font-weight="700" fill="#334155">${labelText} — ${valueText}</text></svg></td></tr>`;
+    };
+    let hierarchy='';
+    if(pChanged) hierarchy+=band('program','Program',p?.name||'—',p?.id);
+    if(kChanged) hierarchy+=band('kegiatan','Kegiatan',k?.name||'—',k?.id);
+    if(mChanged) hierarchy+=band('subkegiatan','Sub Kegiatan',m?.name||'—',m?.id);
+    if(eChanged) hierarchy+=band('pegawai','Pegawai',e?.name||'—',a?.employeeIndex);
+    const spacer=(i>0?'<tr class="assignment-spacer"><td colspan="10"></td></tr>':'');
+    return `${spacer}${hierarchy}<tr class="data-assignment" data-assignment-id="${firstId}" data-assignment-ids="${esc(JSON.stringify(groupIds))}" title="Geser baris untuk mengatur urutan"><td><span class="drag-handle" title="Geser untuk mengurutkan">☷</span> ${i+1}</td><td>${esc(e.unit)}</td><td>${programText}</td><td>${itemDisplay(k,refs,true)}</td><td>${itemDisplay(m,refs,true)}</td><td class="activity-sub-col">${activitySubText}</td><td><div class="employee-name">${esc(e.name)}</div><span class="employee-position">${esc(e.pangkat||'—')} ${e.golongan?`(${esc(e.golongan)})`:''}</span><span class="employee-position">${esc(e.jabatan||'—')}</span></td><td class="activity-col"><div class="activity-cell"><span class="activity-no">${no}</span><span class="activity-text">${esc(a.activity)}</span></div></td><td class="indicator-col">${esc(a.indicator)}</td><td><button class="btn secondary" onclick="editAssignment(${firstId})">Edit</button> <button class="btn danger" onclick="delAssignment(${firstId})">Hapus</button></td></tr>`;
+  }).join('');
+
+  document.getElementById("assignmentBody").innerHTML=html||'<tr><td colspan="10">Belum ada aktivitas paralel.</td></tr>';
+  bindAssignmentDrag();
+  populatePrintEmployee();
+}
+function children(id){return data.items.filter(x=>x.parent===id)}
+function node(x){let kids=children(x.id);return `<li><div class="node"><span class="badge">${levelName(x.level)}</span> <strong>${esc(x.name)}</strong>${getMasterIndicators(x).length?`<div>Indikator: ${getMasterIndicators(x).map((v,i)=>`${i+1}. ${esc(v)}`).join('<br>')}</div>`:""}${x.target?`<div>Target: ${esc(x.target)}</div>`:""}</div>${kids.length?`<ul>${kids.map(node).join("")}</ul>`:""}</li>`}
+function renderTree(){let roots=data.items.filter(x=>!x.parent);document.getElementById("treeBody").innerHTML=`<ul>${roots.map(node).join("")}</ul>`}
+function renderReport(){
+  const report=document.getElementById("reportBody");
+  if(!report)return;
+  const levelIndex=new Map(levels.map(([k],i)=>[k,i]));
+  const byParent=new Map();
+  data.items.forEach(x=>{
+    const p=x.parent==null?"__ROOT__":String(x.parent);
+    if(!byParent.has(p))byParent.set(p,[]);
+    byParent.get(p).push(x);
+  });
+  const sortChildren=(arr)=>arr.sort((a,b)=>{
+    const la=levelIndex.has(a.level)?levelIndex.get(a.level):999;
+    const lb=levelIndex.has(b.level)?levelIndex.get(b.level):999;
+    if(la!==lb)return la-lb;
+    const oa=itemOrderIndex(a.id),ob=itemOrderIndex(b.id);
+    if(oa!==ob)return oa-ob;
+    return String(a.code||"").localeCompare(String(b.code||""),undefined,{numeric:true,sensitivity:"base"})||String(a.name||"").localeCompare(String(b.name||""));
+  });
+  const roots=sortChildren((byParent.get("__ROOT__")||[]).slice());
+  let rows=[];
+  // Nomor referensi mengikuti posisi level pada Master Cascading:
+  // Program: 7.1, 7.2, ...; Kegiatan: 8.1, 8.2, ...; Sub Kegiatan: 9.1, 9.2, ...
+  // Urutan item tetap mengikuti hierarki Program -> Kegiatan -> Sub Kegiatan.
+  const refs=buildReferenceMap();
+  const allPrograms=data.items.filter(x=>x.level==="program").sort((a,b)=>itemOrderIndex(a.id)-itemOrderIndex(b.id)||String(a.code||"").localeCompare(String(b.code||""),undefined,{numeric:true}));
+  function addRow(x,depth,no){rows.push(`<tr><td>${no||refs.get(x.id)||""}</td><td>${esc(levelName(x.level))}</td><td>${esc(x.code||"")}</td><td class="rumusan-cell"><div><b>${esc(x.name)}</b></div></td><td class="indicator-cell">${renderIndicatorList(getMasterIndicators(x))}</td><td>${esc(x.output||"")}</td><td>${esc(x.target||"")}</td></tr>`);}
+  allPrograms.forEach(p=>{
+    addRow(p,0,refs.get(p.id));
+    const kegiatan=sortChildren((byParent.get(String(p.id))||[]).slice()).filter(x=>x.level==="kegiatan");
+    kegiatan.forEach(k=>{
+      addRow(k,1,refs.get(k.id));
+      const subs=sortChildren((byParent.get(String(k.id))||[]).slice()).filter(x=>x.level==="subkegiatan");
+      subs.forEach(sk=>addRow(sk,2,refs.get(sk.id)));
+    });
+  });
+  // Tampilkan level sebelum Program sesuai hierarki master, tanpa nomor.
+  const beforePrograms=data.items.filter(x=>x.level!=="program"&&x.level!=="kegiatan"&&x.level!=="subkegiatan");
+  const beforeRows=[];
+  const seenBefore=new Set();
+  function addBefore(x,depth){
+    if(seenBefore.has(x.id))return;
+    seenBefore.add(x.id);
+    // Nomor level pada laporan selalu mengambil posisi level dari Master Cascading.
+    // Dengan demikian level 1 s.d. 6 akan tampil sebagai 1, 2, 3, 4, 5, 6
+    // sesuai urutan yang sedang tersimpan di Master Cascading.
+    const masterNo=levelIndex.has(x.level)?levelIndex.get(x.level)+1:"";
+    beforeRows.push(`<tr><td>${masterNo}</td><td>${esc(levelName(x.level))}</td><td>${esc(x.code||"")}</td><td class="rumusan-cell"><div><b>${esc(x.name)}</b></div></td><td class="indicator-cell">${renderIndicatorList(getMasterIndicators(x))}</td><td>${esc(x.output||"")}</td><td>${esc(x.target||"")}</td></tr>`);
+    (byParent.get(String(x.id))||[]).forEach(c=>{
+      if(c.level!=="program"&&c.level!=="kegiatan"&&c.level!=="subkegiatan")addBefore(c,depth+1);
+    });
+}
+  (byParent.get("__ROOT__")||[]).filter(x=>x.level!=="program").forEach(x=>addBefore(x,0));
+  rows=beforeRows.concat(rows);
+  report.innerHTML=`
+    <h3 style="margin-bottom:4px">Badan Keuangan Daerah Provinsi Nusa Tenggara Timur</h3>
+    <p style="margin-top:0"><b>Laporan Penjenjangan Kinerja / Cascading</b></p>
+    <div class="notice">Laporan mengikuti <b>urutan level dan hubungan Parent</b> pada Master Cascading. Nomor <b>1 s.d. 6</b> pada level awal mengikuti langsung posisi urutan level di <b>Master Cascading</b>. Penomoran mengikuti posisi level pada Master Cascading: Program <b>7.1, 7.2, ...</b>, Kegiatan <b>8.1, 8.2, ...</b>, dan Sub Kegiatan <b>9.1, 9.2, ...</b> dengan urutan tetap hierarkis Program → Kegiatan → Sub Kegiatan.</div>
+    <table>
+      <thead><tr><th>No.</th><th>Level</th><th>Kode</th><th>Rumusan</th><th>Indikator</th><th>Output</th><th>Target</th></tr></thead>
+      <tbody>${rows.join("")||'<tr><td colspan="7">Belum ada data cascading.</td></tr>'}</tbody>
+    </table>`;
+}
+function populatePrintEmployee(){
+  const sel=document.getElementById('printEmployee'); if(!sel)return;
+  const current=sel.value;
+  const used=new Set(data.assignments.map(a=>Number(a.employeeIndex)).filter(i=>data.employees[i]));
+  const arr=[...used].map(i=>({i,e:data.employees[i]})).sort((a,b)=>employeeSort(a.e,b.e));
+  sel.innerHTML='<option value="">-- Pilih Nama Pegawai --</option>'+arr.map(x=>`<option value="${x.i}">${esc(x.e.name||'')} — ${esc(x.e.jabatan||'')}</option>`).join('');
+  if(arr.some(x=>String(x.i)===current))sel.value=current;
+}
+function printAssignment(mode='all'){
+  const page=document.getElementById('penugasan'); if(!page)return;
+  const sel=document.getElementById('printEmployee');
+  const body=document.getElementById('assignmentBody');
+  if(!body)return;
+  const rows=[...body.querySelectorAll('tr')];
+  rows.forEach(r=>r.classList.remove('print-hidden-row'));
+
+  if(mode==='employee'){
+    const idx=Number(sel?.value);
+    if(!Number.isInteger(idx) || !data.employees[idx])return alert('Pilih nama pegawai terlebih dahulu.');
+
+    /*
+      Cetak Berdasarkan Pegawai:
+      Jangan menyaring pita hierarki berdasarkan posisi pita di layar. Pada layar,
+      pita hanya dibuat ketika nilai hierarki berubah, sehingga satu pegawai bisa
+      berada setelah beberapa pita milik pegawai lain. Untuk cetak, tentukan dulu
+      seluruh rantai hierarki yang benar-benar dimiliki pegawai terpilih dari data
+      assignment, kemudian tampilkan hanya pita yang ID-nya termasuk rantai itu.
+    */
+    const selectedAssignments=data.assignments.filter(a=>Number(a.employeeIndex)===idx);
+    const selectedIds=new Set(selectedAssignments.map(a=>String(a.id)));
+    const selectedPrograms=new Set();
+    const selectedKegiatan=new Set();
+    const selectedSubs=new Set();
+    selectedAssignments.forEach(a=>{
+      const m=data.items.find(x=>Number(x.id)===Number(a.subId));
+      const k=m&&data.items.find(x=>Number(x.id)===Number(m.parent));
+      const p=k&&data.items.find(x=>Number(x.id)===Number(k.parent));
+      if(p)selectedPrograms.add(String(p.id));
+      if(k)selectedKegiatan.add(String(k.id));
+      if(m)selectedSubs.add(String(m.id));
+    });
+
+    // Sembunyikan semuanya terlebih dahulu. Yang dibuka kembali hanya data
+    // pegawai terpilih dan pita Program/Kegiatan/Sub Kegiatan yang terkait.
+    rows.forEach(r=>r.classList.add('print-hidden-row'));
+
+    rows.forEach(r=>{
+      if(r.matches('tr[data-assignment-id]')){
+        const ids=JSON.parse(r.dataset.assignmentIds||'[]');
+        if(ids.some(id=>selectedIds.has(String(id)))){
+          r.classList.remove('print-hidden-row');
+        }
+        return;
+      }
+      if(!r.classList.contains('hierarchy-band'))return;
+      const type=r.dataset.hierarchyBand||'';
+      const id=String(r.dataset.hierarchyId||'');
+      if(type==='program' && selectedPrograms.has(id)){
+        r.classList.remove('print-hidden-row');
+      }else if(type==='kegiatan' && selectedKegiatan.has(id)){
+        r.classList.remove('print-hidden-row');
+      }else if(type==='subkegiatan' && selectedSubs.has(id)){
+        r.classList.remove('print-hidden-row');
+      }else if(type==='pegawai' && id===String(idx)){
+        r.classList.remove('print-hidden-row');
+      }
+    });
+  }
+
+  const oldTitle=document.title;
+  document.title=mode==='employee' ? `Penugasan Aktivitas - ${data.employees[Number(sel.value)].name}` : 'Penugasan Aktivitas - Seluruh';
+  window.print();
+  document.title=oldTitle;
+  [...body.querySelectorAll('tr')].forEach(r=>r.classList.remove('print-hidden-row'));
+}
+function printReport(){renderReport();let old=document.body.innerHTML, content=document.getElementById("reportBody").outerHTML;document.body.innerHTML=`<div style="padding:25px;font-family:Arial">${content}</div>`;window.print();location.reload()}
+function downloadBackup(){let a=document.createElement("a");a.href=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:"application/json"}));a.download="backup-cascading-bakeuda-ntt.json";a.click()}
+function restoreBackup(ev){let f=ev.target.files[0];if(!f)return;let r=new FileReader();r.onload=()=>{try{let x=JSON.parse(r.result);if(!x.items||!x.employees)throw 0;data=x;save();alert("Restore berhasil.")}catch(e){alert("File backup tidak valid.")}};r.readAsText(f)}
+function resetData(){if(confirm("Semua data saat ini akan diganti dengan data contoh. Lanjutkan?")){data=JSON.parse(JSON.stringify(initial));savedItemOrder=data.items.map(x=>x.id);saveItemOrder();localStorage.removeItem(key+"_level_order");location.reload()}}
+function renderAll(){renderStats();renderMaster();renderEmployees();renderEmployeeSubGroups();renderTree();renderReport();assignmentInit()}
+renderAll();
+</script>
+</body></html>
